@@ -35,7 +35,7 @@ describe("BadCache Bridge Test", () => {
   before(async () => {
     [owner, wallet, walletTo] = await ethers.getSigners();
     prov = await ethers.getDefaultProvider();
-    console.log(await hre.ethers.getSigners())
+    console.log(await hre.ethers.getSigners());
 
     BridgeFactory = (await ethers.getContractFactory("BadCacheBridge", owner)) as BadCacheBridge__factory;
 
@@ -76,9 +76,9 @@ describe("BadCache Bridge Test", () => {
       .to.emit(OpenSeaToken, "TransferSingle")
       .withArgs(owner.address, owner.address, Bridge.address, 1, 1);
 
-      // expect(await Bridge.connect(owner).renounceOwnershipOfToken(walletTo.address, 1, 1, []))
-      // .to.emit(OpenSeaToken, "TransferSingle")
-      // .withArgs(owner.address, owner.address, walletTo.address, 1, 1);
+    // expect(await Bridge.connect(owner).renounceOwnershipOfToken(walletTo.address, 1, 1, []))
+    // .to.emit(OpenSeaToken, "TransferSingle")
+    // .withArgs(owner.address, owner.address, walletTo.address, 1, 1);
     // expect(await Bridge.checkBalance(owner.address, 1)).to.equals(0);
     // expect(await Bridge.checkBalance(walletTo.address, 1)).to.equals(1);
 
