@@ -1,0 +1,21 @@
+//SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.6;
+
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract BadCache721 is ERC721URIStorage, Ownable {
+  constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) {}
+
+  function setTokenUri(uint256 _tokenId, string memory _tokenURI) public onlyOwner {
+    _setTokenURI(_tokenId, _tokenURI);
+  }
+
+  function mint(address _owner, uint256 _tokenId) public onlyOwner {
+    _safeMint(_owner, _tokenId);
+  }
+
+  function exists(uint256 _tokenId) public view onlyOwner returns (bool) {
+    return _exists(_tokenId);
+  }
+}
