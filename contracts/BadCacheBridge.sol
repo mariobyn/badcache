@@ -16,7 +16,12 @@ import "./OpenSeaIERC1155.sol";
 contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder {
   mapping(string => string) private allowedAssets;
   address public openseaToken = 0x495f947276749Ce646f68AC8c248420045cb7b5e;
-  mapping(address => mapping(uint256 => uint256)) private tokensTransfered;
+  // mapping(address => mapping(uint256 => uint256)) private tokensTransfered;
+  // mapping(uint256 => address) private tokenSenders;
+  // uint256[] private ids;
+  uint128 private totalTransfers = 0;
+  address[] private senders;
+  mapping(uint128 => mapping(address => uint256)) private transfers;
 
   constructor() onlyOwner {}
 
@@ -61,10 +66,39 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder {
     uint256 amount,
     bytes memory data
   ) public override returns (bytes4) {
-    tokensTransfered[sender][id] = amount;
     console.logString("Received token");
     console.logUint(id);
     console.logUint(amount);
+    console.logAddress(sender);
+    updateTransfers(sender, id);
     return super.onERC1155Received(sender, receiver, id, amount, data);
+  }
+
+  function getTransferCount() public view returns (uint128) {
+    return totalTransfers;
+  }
+
+  function getAddressesThatTransferedIds() public view returns (address[] memory) {
+    return senders;
+  }
+
+  function resetState() public onlyOwner {
+    for (uint128 i = 0; i < totalTransfers; i++) {
+      delete transfers[i][senders[i]];
+    }
+    delete totalTransfers;
+  }
+
+  function updateTransfers(address _sender, uint256 _tokenId) private returns (uint128 count) {
+    totalTransfers++;
+    senders.push(_sender);
+    transfers[totalTransfers][_sender] = _tokenId;
+    return totalTransfers;
+  }
+
+  //Delete this before release
+  function updateTransfersPublic(address _sender, uint256 _tokenId) public returns (uint256 count) {
+    uint128 transfercount = updateTransfers(_sender, _tokenId);
+    return transfercount;
   }
 }

@@ -35,7 +35,6 @@ describe("BadCache Bridge Test", () => {
   before(async () => {
     [owner, wallet, walletTo] = await ethers.getSigners();
     prov = await ethers.getDefaultProvider();
-    console.log(await hre.ethers.getSigners());
 
     BridgeFactory = (await ethers.getContractFactory("BadCacheBridge", owner)) as BadCacheBridge__factory;
 
@@ -53,51 +52,55 @@ describe("BadCache Bridge Test", () => {
     console.log("Created OpenSea Custom ERC1155 Token: " + OpenSeaToken.address);
   });
 
-  // it("Receives OpenSea Token and validates based on Receipt", async () => {
-  //   let balanceBefore = await TestToken.balanceOf(owner.address);
-  //   console.log("Balance before " + balanceBefore);
-  //   await TestToken.approve(owner.address, 100);
-  //   let response = await TestToken.transferFrom(owner.address, Bridge.address, 100);
-  //   let balance = await TestToken.balanceOf(Bridge.address);
-  //   console.log("Balance after " + balance);
-
-  //   // await expect(()=>  wallet.sendTransaction({ to: Bridge.address, gasPrice: 0, value: 200 })).to.changeEtherBalance(Bridge.address, 200);
-  //   // console.log(response);
-  // });
-
-  it("It can use safeTransferFrom from ERC1155", async () => {
+  xit("It checks balances of the owner address and the wallet that we need to transfer too using the token and bridge", async () => {
     await Bridge.setProxiedToken(OpenSeaToken.address);
 
-    // expect(await OpenSeaToken.balanceOf(owner.address, 1)).to.equals(1);
-    // expect(await Bridge.checkBalance(owner.address, 1)).to.equals(1);
-    // expect(await Bridge.checkBalance(walletTo.address, 1)).to.equals(0);
+    expect(await OpenSeaToken.balanceOf(owner.address, 1)).to.equals(10);
+    expect(await Bridge.checkBalance(owner.address, 1)).to.equals(10);
+    expect(await Bridge.checkBalance(walletTo.address, 1)).to.equals(0);
+  });
+
+  xit("It can use safeTransferFrom from ERC1155", async () => {
+    await Bridge.setProxiedToken(OpenSeaToken.address);
+
+    expect(await OpenSeaToken.balanceOf(owner.address, 1)).to.equals(10);
+    expect(await Bridge.checkBalance(owner.address, 1)).to.equals(10);
+    expect(await Bridge.checkBalance(walletTo.address, 1)).to.equals(0);
 
     expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 1, 1, []))
       .to.emit(OpenSeaToken, "TransferSingle")
       .withArgs(owner.address, owner.address, Bridge.address, 1, 1);
 
-    // expect(await Bridge.connect(owner).renounceOwnershipOfToken(walletTo.address, 1, 1, []))
-    // .to.emit(OpenSeaToken, "TransferSingle")
-    // .withArgs(owner.address, owner.address, walletTo.address, 1, 1);
-    // expect(await Bridge.checkBalance(owner.address, 1)).to.equals(0);
-    // expect(await Bridge.checkBalance(walletTo.address, 1)).to.equals(1);
-
-    // console.log("owner " + walletTo.address);
-    // console.log("towallet " + wallet.address);
-    // expect(await Bridge.connect(walletTo).renounceOwnershipOfToken(wallet.address, 1, 1, []))
-    //   .to.emit(OpenSeaToken, "TransferSingle")
-    //   .withArgs(walletTo.address, walletTo.address, wallet.address, 1, 1);
-
-    expect(await Bridge.checkBalance(owner.address, 1)).to.equals(0);
+    expect(await Bridge.checkBalance(owner.address, 1)).to.equals(9);
     expect(await Bridge.checkBalance(Bridge.address, 1)).to.equals(1);
-
-    // expect(await Bridge.transferFromOpenSea(Bridge.address, walletTo.address, 1, 1, []))
-    //   .to.emit(Bridge, "TransferSingle")
-    //   .withArgs(Bridge.address, walletTo.address, 1, []);
-
-    // expect(await Bridge.checkBalance(walletTo.address, 1)).to.equal(1);
   });
 
+  it("It can update transfers number, senders array and transfers array", async () => {
+    await Bridge.setProxiedToken(OpenSeaToken.address);
+    await Bridge.connect(owner).resetState();
+    expect(await Bridge.callStatic.updateTransfersPublic(owner.address, 1)).to.equals(1);
+  });
+
+  it("It can validate a transfer being saved into the Bridge internal storage", async () => {
+    await Bridge.setProxiedToken(OpenSeaToken.address);
+    await Bridge.connect(owner).resetState();
+    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 1, 1, []))
+      .to.emit(OpenSeaToken, "TransferSingle")
+      .withArgs(owner.address, owner.address, Bridge.address, 1, 1);
+
+    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, walletTo.address, 1, 1, []))
+      .to.emit(OpenSeaToken, "TransferSingle")
+      .withArgs(owner.address, owner.address, walletTo.address, 1, 1);
+
+    expect(await OpenSeaToken.connect(walletTo).safeTransferFrom(walletTo.address, Bridge.address, 1, 1, []))
+      .to.emit(OpenSeaToken, "TransferSingle")
+      .withArgs(walletTo.address, walletTo.address, Bridge.address, 1, 1);
+
+    expect(await Bridge.getTransferCount()).to.equals(2);
+    expect(await Bridge.getAddressesThatTransferedIds()).to.eql([owner.address, walletTo.address]);
+  });
+
+  //This one should be used only with hardhat network cause hardhat network is forking the mainnate so the account and the opentoken from opensea
   xit("It can check balance of impersonator", async () => {
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
@@ -114,37 +117,6 @@ describe("BadCache Bridge Test", () => {
       await Bridge.checkBalance(owner.address, "85601406272210854214775655996269203562327957411057160318308680236048612065281")
     ).to.equals(1);
 
-    await hre.network.provider.request({
-      method: "hardhat_stopImpersonatingAccount",
-      params: ["0x358100c75A442a1A40D9aa0662269d320D7F0F2e"],
-    });
-  });
-
-  xit("It can use safeTransferFrom from owner of contract", async () => {
-    await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: ["0x358100c75A442a1A40D9aa0662269d320D7F0F2e"],
-    });
-    owner = await ethers.getSigner("0x358100c75A442a1A40D9aa0662269d320D7F0F2e");
-    await Bridge.setProxiedToken("0x495f947276749Ce646f68AC8c248420045cb7b5e");
-
-    expect(
-      await Bridge.checkBalance(owner.address, "85601406272210854214775655996269203562327957411057160318308680236048612065281")
-    ).to.equals(1);
-
-    expect(
-      await Bridge.connect(owner).transferFromOpenSea(
-        owner.address,
-        walletTo.address,
-        "85601406272210854214775655996269203562327957411057160318308680236048612065281",
-        1,
-        []
-      )
-    ).to.equals(true);
-
-    expect(
-      await Bridge.checkBalance(walletTo.address, "85601406272210854214775655996269203562327957411057160318308680236048612065281")
-    ).to.equals(1);
     await hre.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
       params: ["0x358100c75A442a1A40D9aa0662269d320D7F0F2e"],

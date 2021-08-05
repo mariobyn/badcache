@@ -3,9 +3,11 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
-import "hardhat-deploy-ethers";
-import "hardhat-abi-exporter";
+import "hardhat-deploy";
+import * as dotenv from "dotenv";
+import "@nomiclabs/hardhat-etherscan";
 
+dotenv.config();
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -17,6 +19,8 @@ task("accounts", "Prints the list of accounts", async (args, hre) => {
   }
 });
 
+const { DEPLOYER_PRIVATE_KEY, INFURA_RINKEBY, ALCHEMY_MAINNET_FORK, ETHERSCAN_API } = process.env;
+
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
@@ -25,7 +29,7 @@ task("accounts", "Prints the list of accounts", async (args, hre) => {
  */
 export default {
   solidity: "0.8.6",
-  defaultNetwork: "rinkeby",
+  defaultNetwork: "hardhat",
   typechain: {
     outDir: "typechain",
     target: "ethers-v5",
@@ -39,21 +43,17 @@ export default {
   networks: {
     hardhat: {
       forking: {
-        url: "https://eth-mainnet.alchemyapi.io/v2/4HyDsDjcbn39V7U2P5MdIA-eC3z3Ds11"
+        url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_MAINNET_FORK}`,
       },
       gas: 2100000,
-      gasPrice: 8000000000
+      gasPrice: 8000000000,
     },
     rinkeby: {
-      url: "https://eth-mainnet.alchemyapi.io/v2/g_49Z5DLJiwnEBnjisKeXpiR1GAI31Xo",
-      accounts: ['15ee17a4c89bdfbbb1fac582b09f343b7aff95a4f08d7f6bd8f6320eeb61a54f']
-    }
+      url: `https://rinkeby.infura.io/v3/${INFURA_RINKEBY}`,
+      accounts: [`${DEPLOYER_PRIVATE_KEY}`],
+    },
   },
-  abiExporter: {
-    path: './data/abi',
-    clear: true,
-    flat: true,
-    only: [':ERC20$'],
-    spacing: 2
-  }
+  etherscan: {
+    apiKey: `${ETHERSCAN_API}`,
+  },
 };

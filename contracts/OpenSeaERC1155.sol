@@ -9,7 +9,7 @@ contract OpenSeaERC1155 is ERC1155, ERC1155Holder {
     constructor() ERC1155("https://game.example/api/item/{id}.json") {
         console.logString("Minting one token for");
         console.logAddress(msg.sender);
-        _mint(msg.sender, 1, 1, "");
+        _mint(msg.sender, 1, 10, "");
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC1155,ERC1155Receiver) returns (bool) {
