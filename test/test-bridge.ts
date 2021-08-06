@@ -3,9 +3,8 @@ import { BigNumber, Signer, Wallet } from "ethers";
 import { expect } from "chai";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { BadCacheBridge__factory, OpenSeaERC1155__factory, BadCache721__factory } from "../typechain";
+import { BadCacheBridgeTest__factory, OpenSeaERC1155__factory, BadCache721__factory } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { MockProvider } from "ethereum-waffle";
 
 describe("BadCache Bridge Test", () => {
   let Bridge: any;
@@ -23,13 +22,15 @@ describe("BadCache Bridge Test", () => {
 
   let wallet: any;
   let walletTo: any;
-  // let hre: HardhatRuntimeEnvironment
+  let walletTest1: any;
+  let walletTest2: any;
+  let walletTest3: any;
 
   before(async () => {
-    [owner, wallet, walletTo] = await ethers.getSigners();
+    [owner, wallet, walletTo, walletTest1, walletTest2, walletTest3] = await ethers.getSigners();
     prov = await ethers.getDefaultProvider();
 
-    BridgeFactory = (await ethers.getContractFactory("BadCacheBridge", owner)) as BadCacheBridge__factory;
+    BridgeFactory = (await ethers.getContractFactory("BadCacheBridgeTest", owner)) as BadCacheBridgeTest__factory;
 
     OpenSeaTokenFactory = (await ethers.getContractFactory("OpenSeaERC1155", owner)) as OpenSeaERC1155__factory;
 
@@ -47,7 +48,7 @@ describe("BadCache Bridge Test", () => {
   });
 
   beforeEach(async () => {
-    await Bridge.setProxiedToken(OpenSeaToken.address);
+    await Bridge.connect(owner).setProxiedToken(OpenSeaToken.address);
     await Bridge.connect(owner).setBadCache721(BadCache721.address);
     await Bridge.connect(owner).resetState();
   });
@@ -75,40 +76,89 @@ describe("BadCache Bridge Test", () => {
     expect(await Bridge.callStatic.updateTransfersPublic(owner.address, 1)).to.equals(1);
   });
 
+  it("It can not update transfers number, senders array and transfers array from address(0)", async () => {
+    await expect(Bridge.callStatic.updateTransfersPublic("0x0000000000000000000000000000000000000000", 1)).to.be.revertedWith(
+      "BadCacheBridge: can not update from the zero address"
+    );
+  });
+
+  it("It can not update transfers number, senders array and transfers for a token id that does not exists", async () => {
+    await expect(Bridge.callStatic.updateTransfersPublic(owner.address, 10000)).to.be.revertedWith(
+      "BadCacheBridge: token id does not exists"
+    );
+  });
+
+  it("It can not mint 721 from address 0", async () => {
+    await expect(Bridge.mintBasedOnReceivingPublic("0x0000000000000000000000000000000000000000", 1)).to.be.revertedWith(
+      "BadCacheBridge: can not mint a new token to the zero address"
+    );
+  });
+
+  it("It will not mint a 721 because it was already minted", async () => {
+    await Bridge.mintBasedOnReceivingPublic(walletTest1.address, 4);
+    expect(await BadCache721.connect(owner).balanceOf(walletTest1.address)).to.equals(1);
+    await expect(Bridge.mintBasedOnReceivingPublic(walletTest1.address, 4)).to.be.revertedWith(
+      "BadCacheBridge: token already minted"
+    );
+  });
+
+  it("It can not mint 721 for a token that does not exists", async () => {
+    await expect(Bridge.mintBasedOnReceivingPublic(owner.address, 1000)).to.be.revertedWith(
+      "BadCacheBridge: token id does not exists"
+    );
+  });
+
   it("It can validate a transfer being saved into the Bridge internal storage", async () => {
-    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 1, 1, []))
+    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 5, 1, []))
       .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(owner.address, owner.address, Bridge.address, 1, 1);
+      .withArgs(owner.address, owner.address, Bridge.address, 5, 1);
 
-    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, walletTo.address, 1, 1, []))
+    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, walletTest2.address, 6, 1, []))
       .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(owner.address, owner.address, walletTo.address, 1, 1);
+      .withArgs(owner.address, owner.address, walletTest2.address, 6, 1);
 
-    expect(await OpenSeaToken.connect(walletTo).safeTransferFrom(walletTo.address, Bridge.address, 1, 1, []))
+    await expect(OpenSeaToken.connect(walletTest2).safeTransferFrom(walletTest2.address, Bridge.address, 6, 1, []))
       .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(walletTo.address, walletTo.address, Bridge.address, 1, 1);
+      .withArgs(walletTest2.address, walletTest2.address, Bridge.address, 6, 1);
 
     expect(await Bridge.getTransferCount()).to.equals(2);
-    expect(await Bridge.getAddressesThatTransferedIds()).to.eql([owner.address, walletTo.address]);
+    expect(await Bridge.getAddressesThatTransferedIds()).to.eql([owner.address, walletTest2.address]);
+  });
+
+  it("It can not accept a token from not an owner", async () => {
+    await expect(OpenSeaToken.connect(owner).safeTransferFrom(walletTo.address, Bridge.address, 1, 1, [])).to.be.revertedWith(
+      "ERC1155: caller is not owner nor approved"
+    );
+  });
+
+  it("It can not accept a token that is not allowed", async () => {
+    await expect(OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 1000, 1, [])).to.be.revertedWith(
+      "BadCacheBridge: token id does not exists"
+    );
   });
 
   it("It can return ids", async () => {
-    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 1, 1, []))
+    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 7, 1, []))
       .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(owner.address, owner.address, Bridge.address, 1, 1);
+      .withArgs(owner.address, owner.address, Bridge.address, 7, 1);
 
-    let arr = [BigNumber.from("1")];
+    //There are 7 transfers done till here if you run all tests, otherwise you need to adjust accordingly
+    let arr = [BigNumber.from("7")];
     expect(await Bridge.getTransferCount()).to.equals(1);
 
     expect(await Bridge.getIds()).to.eql(arr);
   });
 
   it("It can mint 721 based on receiving", async () => {
-    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 2, 1, []))
+    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, walletTest3.address, 2, 1, []))
       .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(owner.address, owner.address, Bridge.address, 2, 1);
+      .withArgs(owner.address, owner.address, walletTest3.address, 2, 1);
 
-    expect(await BadCache721.connect(owner).balanceOf(owner.address)).to.equals(2);
+    expect(await OpenSeaToken.connect(walletTest3).safeTransferFrom(walletTest3.address, Bridge.address, 2, 1, []))
+      .to.emit(OpenSeaToken, "TransferSingle")
+      .withArgs(walletTest3.address, walletTest3.address, Bridge.address, 2, 1);
+
+    expect(await BadCache721.connect(walletTest3).balanceOf(walletTest3.address)).to.equals(1);
   });
 
   it("Check the uri of a newly minted token", async () => {

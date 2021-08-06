@@ -21,61 +21,58 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   address[] private senders;
   mapping(uint128 => mapping(address => uint256)) private transfers;
   address private badCache721 = 0x495f947276749Ce646f68AC8c248420045cb7b5e;
-  mapping(uint256 => string) tokenURIs;
+  mapping(uint256 => string) private tokenURIs;
+  uint256[] private allowedTokens;
 
   constructor() onlyOwner {
     initExistingTokens();
   }
 
-  function mintBasedOnReceiving(address _sender, uint256 _tokenId) private returns (bool) {
-    if (BadCache721(badCache721).exists(_tokenId)) return false;
+  function mintBasedOnReceiving(address _sender, uint256 _tokenId) internal returns (bool) {
+    require(_sender != address(0), "BadCacheBridge: can not mint a new token to the zero address");
+    require(isTokenAllowed(_tokenId), "BadCacheBridge: token id does not exists");
+
+    require(!BadCache721(badCache721).exists(_tokenId), "BadCacheBridge: token already minted");
     BadCache721(badCache721).mint(address(this), _tokenId);
     BadCache721(badCache721).setTokenUri(_tokenId, getURIById(_tokenId));
     BadCache721(badCache721).safeTransferFrom(address(this), _sender, _tokenId);
+
     return true;
   }
 
-  function checkBalance(address account, uint256 id) public view returns (uint256 count) {
-    // console.logString("Check balance");
-    return OpenSeaIERC1155(openseaToken).balanceOf(account, id);
+  function checkBalance(address _account, uint256 _tokenId) public view returns (uint256) {
+    require(_account != address(0), "BadCacheBridge: can not check balance for address zero");
+    require(isTokenAllowed(_tokenId), "BadCacheBridge: token id does not exists");
+
+    return OpenSeaIERC1155(openseaToken).balanceOf(_account, _tokenId);
   }
 
   function setProxiedToken(address _token) public onlyOwner {
-    //need to check for address 0
-    // console.logString("setProxiedToken");
-    // console.logAddress(_token);
+    require(_token != address(0), "BadCacheBridge: can not set as proxy the address zero");
 
     openseaToken = _token;
   }
 
   function setBadCache721(address _token) public onlyOwner {
-    //need to check for address 0
-    // console.logString("setBadCache721");
-    // console.logAddress(_token);
+    require(_token != address(0), "BadCacheBridge: can not set as proxy the address zero");
 
     badCache721 = _token;
   }
 
-  function ownerOf(uint256 id) public view returns (bool) {
-    // console.logString("ownerOf");
-    return OpenSeaIERC1155(openseaToken).balanceOf(msg.sender, id) != 0;
+  function ownerOf(uint256 _tokenId) public view returns (bool) {
+    return OpenSeaIERC1155(openseaToken).balanceOf(msg.sender, _tokenId) != 0;
   }
 
   function onERC1155Received(
-    address sender,
-    address receiver,
-    uint256 id,
-    uint256 amount,
-    bytes memory data
+    address _sender,
+    address _receiver,
+    uint256 _tokenId,
+    uint256 _amount,
+    bytes memory _data
   ) public override returns (bytes4) {
-    // console.logString("Received token");
-    // console.logUint(id);
-    // console.logUint(amount);
-    // console.logAddress(sender);
-    // console.logBytes(msg.data);
-    updateTransfers(sender, id);
-    mintBasedOnReceiving(sender, id);
-    return super.onERC1155Received(sender, receiver, id, amount, data);
+    updateTransfers(_sender, _tokenId);
+    mintBasedOnReceiving(_sender, _tokenId);
+    return super.onERC1155Received(_sender, _receiver, _tokenId, _amount, _data);
   }
 
   function getTransferCount() public view returns (uint128) {
@@ -86,22 +83,6 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
     return senders;
   }
 
-  function getIds() public view returns (uint256[] memory) {
-    uint256[] memory ids = new uint256[](totalTransfers);
-    for (uint128 i = 0; i < totalTransfers; i++) {
-      // console.logUint(transfers[i][senders[i]]);
-      // console.logAddress(senders[i]);
-      ids[i] = transfers[i][senders[i]];
-    }
-    return ids;
-  }
-
-  function getURIById(uint256 _tokenId) private view returns (string memory) {
-    // console.logString("Getting uri by id");
-    // console.logString(tokenURIs[_tokenId]);
-    return tokenURIs[_tokenId];
-  }
-
   function resetState() public onlyOwner {
     for (uint128 i = 0; i < totalTransfers; i++) {
       delete transfers[i][senders[i]];
@@ -110,24 +91,54 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
     delete totalTransfers;
   }
 
-  function updateTransfers(address _sender, uint256 _tokenId) private returns (uint128 count) {
+  function getIds() public view returns (uint256[] memory) {
+    uint256[] memory ids = new uint256[](totalTransfers);
+    for (uint128 i = 0; i < totalTransfers; i++) {
+      ids[i] = transfers[i][senders[i]];
+    }
+    return ids;
+  }
+
+  function getURIById(uint256 _tokenId) private view returns (string memory) {
+    require(isTokenAllowed(_tokenId), "BadCacheBridge: token id does not exists");
+    return tokenURIs[_tokenId];
+  }
+
+  function updateTransfers(address _sender, uint256 _tokenId) internal returns (uint128 count) {
+    require(_sender != address(0), "BadCacheBridge: can not update from the zero address");
+    require(isTokenAllowed(_tokenId), "BadCacheBridge: token id does not exists");
+
     senders.push(_sender);
-    // console.logString("Saved id");
-    // console.logUint(_tokenId);
     transfers[totalTransfers][_sender] = _tokenId;
     totalTransfers++;
     return totalTransfers;
   }
 
-  //Delete this before release
-  function updateTransfersPublic(address _sender, uint256 _tokenId) public onlyOwner returns (uint256 count) {
-    uint128 transfercount = updateTransfers(_sender, _tokenId);
-    return transfercount;
+  function isTokenAllowed(uint256 _tokenId) private view returns (bool) {
+    for (uint128 i = 0; i < allowedTokens.length; i++) {
+      if (allowedTokens[i] == _tokenId) return true;
+    }
+    return false;
   }
 
   function initExistingTokens() private {
     tokenURIs[1] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=1.png";
     tokenURIs[2] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=2.png";
     tokenURIs[3] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=3.png";
+    tokenURIs[4] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=4.png";
+    tokenURIs[5] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=5.png";
+    tokenURIs[6] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=6.png";
+    tokenURIs[7] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=7.png";
+    tokenURIs[8] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=8.png";
+    tokenURIs[9] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=9.png";
+    allowedTokens.push(1);
+    allowedTokens.push(2);
+    allowedTokens.push(3);
+    allowedTokens.push(4);
+    allowedTokens.push(5);
+    allowedTokens.push(6);
+    allowedTokens.push(7);
+    allowedTokens.push(8);
+    allowedTokens.push(9);
   }
 }
