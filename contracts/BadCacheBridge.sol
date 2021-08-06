@@ -211,23 +211,27 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
    * @dev initiation of the allowed tokens
    */
   function initAllowedTokens() private {
-    tokenURIs[1] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=1.png";
-    tokenURIs[2] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=2.png";
-    tokenURIs[3] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=3.png";
-    tokenURIs[4] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=4.png";
-    tokenURIs[5] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=5.png";
-    tokenURIs[6] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=6.png";
-    tokenURIs[7] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=7.png";
-    tokenURIs[8] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=8.png";
-    tokenURIs[9] = "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=9.png";
-    allowedTokens.push(1);
-    allowedTokens.push(2);
-    allowedTokens.push(3);
-    allowedTokens.push(4);
-    allowedTokens.push(5);
-    allowedTokens.push(6);
-    allowedTokens.push(7);
-    allowedTokens.push(8);
-    allowedTokens.push(9);
+    addAllowedToken(1, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=1.png");
+    addAllowedToken(2, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=2.png");
+    addAllowedToken(3, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=3.png");
+    addAllowedToken(4, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=4.png");
+    addAllowedToken(5, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=5.png");
+    addAllowedToken(6, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=6.png");
+    addAllowedToken(7, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=7.png");
+    addAllowedToken(8, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=8.png");
+    addAllowedToken(9, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=9.png");
+    // addAllowedToken(
+    //   85601406272210854214775655996269203562327957411057160318308680236048612065281,
+    //   "https://ipfs.io/ipfs/QmaNsZbtuJ66NUJMkhynTmjpjkkwy6BWhp4JvyjGginETN/31.png"
+    // );
+    // addAllowedToken(
+    //   85601406272210854214775655996269203562327957411057160318308680267934449270785,
+    //   "https://ipfs.io/ipfs/QmaNsZbtuJ66NUJMkhynTmjpjkkwy6BWhp4JvyjGginETN/60.png"
+    // );
+  }
+
+  function addAllowedToken(uint256 _tokenId, string memory _uri) public onlyOwner {
+    tokenURIs[_tokenId] = _uri;
+    allowedTokens.push(_tokenId);
   }
 }

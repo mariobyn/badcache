@@ -65,6 +65,8 @@ describe("BadCache Bridge Test", () => {
     expect(await Bridge.checkBalance(walletTo.address, 1)).to.equals(0);
 
     expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 1, 1, []))
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(owner.address, owner.address, 1, 1)
       .to.emit(OpenSeaToken, "TransferSingle")
       .withArgs(owner.address, owner.address, Bridge.address, 1, 1);
 
@@ -110,6 +112,8 @@ describe("BadCache Bridge Test", () => {
 
   it("It can validate a transfer being saved into the Bridge internal storage", async () => {
     expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 5, 1, []))
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(owner.address, owner.address, 5, 1)
       .to.emit(OpenSeaToken, "TransferSingle")
       .withArgs(owner.address, owner.address, Bridge.address, 5, 1);
 
@@ -118,6 +122,8 @@ describe("BadCache Bridge Test", () => {
       .withArgs(owner.address, owner.address, walletTest2.address, 6, 1);
 
     await expect(OpenSeaToken.connect(walletTest2).safeTransferFrom(walletTest2.address, Bridge.address, 6, 1, []))
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(walletTest2.address, walletTest2.address, 6, 1)
       .to.emit(OpenSeaToken, "TransferSingle")
       .withArgs(walletTest2.address, walletTest2.address, Bridge.address, 6, 1);
 
@@ -139,6 +145,8 @@ describe("BadCache Bridge Test", () => {
 
   it("It can return ids", async () => {
     expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 7, 1, []))
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(owner.address, owner.address, 7, 1)
       .to.emit(OpenSeaToken, "TransferSingle")
       .withArgs(owner.address, owner.address, Bridge.address, 7, 1);
 
@@ -155,6 +163,8 @@ describe("BadCache Bridge Test", () => {
       .withArgs(owner.address, owner.address, walletTest3.address, 2, 1);
 
     expect(await OpenSeaToken.connect(walletTest3).safeTransferFrom(walletTest3.address, Bridge.address, 2, 1, []))
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(walletTest3.address, walletTest3.address, 2, 1)
       .to.emit(OpenSeaToken, "TransferSingle")
       .withArgs(walletTest3.address, walletTest3.address, Bridge.address, 2, 1);
 
@@ -163,12 +173,40 @@ describe("BadCache Bridge Test", () => {
 
   it("Check the uri of a newly minted token", async () => {
     expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 3, 1, []))
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(owner.address, owner.address, 3, 1)
       .to.emit(OpenSeaToken, "TransferSingle")
       .withArgs(owner.address, owner.address, Bridge.address, 3, 1);
 
     expect(await BadCache721.connect(owner).tokenURI(3)).to.equals(
       "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=3.png"
     );
+  });
+
+  xit("Check  transfer of new token", async () => {
+    expect(
+      await OpenSeaToken.connect(owner).safeTransferFrom(
+        owner.address,
+        owner.address,
+        "85601406272210854214775655996269203562327957411057160318308680267934449270785",
+        1,
+        []
+      )
+    )
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(owner.address, Bridge.address, "85601406272210854214775655996269203562327957411057160318308680267934449270785", 1)
+      .to.emit(OpenSeaToken, "TransferSingle")
+      .withArgs(
+        owner.address,
+        owner.address,
+        Bridge.address,
+        "85601406272210854214775655996269203562327957411057160318308680267934449270785",
+        1
+      );
+
+    expect(
+      await BadCache721.connect(owner).tokenURI("85601406272210854214775655996269203562327957411057160318308680267934449270785")
+    ).to.equals("https://ipfs.io/ipfs/QmaNsZbtuJ66NUJMkhynTmjpjkkwy6BWhp4JvyjGginETN/60.png");
   });
 
   //This one should be used only with hardhat network cause hardhat network is forking the mainnate so the account and the opentoken from opensea

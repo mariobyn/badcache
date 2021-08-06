@@ -17,6 +17,8 @@ contract OpenSeaERC1155 is ERC1155, ERC1155Holder {
     _mint(msg.sender, 8, 10, "");
     _mint(msg.sender, 9, 10, "");
     _mint(msg.sender, 1000, 10, "");
+    _mint(msg.sender, 85601406272210854214775655996269203562327957411057160318308680267934449270785, 10, "");
+    _mint(msg.sender, 85601406272210854214775655996269203562327957411057160318308680236048612065281, 10, "");
   }
 
   function supportsInterface(bytes4 interfaceId) public view override(ERC1155, ERC1155Receiver) returns (bool) {
