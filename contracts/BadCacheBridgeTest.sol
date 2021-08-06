@@ -14,12 +14,18 @@ contract BadCacheBridgeTest is BadCacheBridge {
   constructor() onlyOwner BadCacheBridge() {}
 
   function updateTransfersPublic(address _sender, uint256 _tokenId) public onlyOwner returns (uint256 count) {
-    return updateTransfers(_sender, _tokenId);
+    return onReceiveTransfer(_sender, _tokenId);
   }
 
   function mintBasedOnReceivingPublic(address _sender, uint256 _tokenId) public onlyOwner returns (bool) {
     return mintBasedOnReceiving(_sender, _tokenId);
   }
 
-  
+  function resetState() public onlyOwner {
+    for (uint128 i = 0; i < totalTransfers; i++) {
+      delete transfers[i][senders[i]];
+    }
+    delete senders;
+    delete totalTransfers;
+  }
 }
