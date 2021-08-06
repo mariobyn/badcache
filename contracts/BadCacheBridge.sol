@@ -12,7 +12,7 @@ import "./BadCache721.sol";
 /**
  * @dev This contracts bridges an OpenSea ERC1155 into the new Badcache ERC721.
  *      Only owners of BadCache from OpenSea can mint new tokens once they transfer their NFT ownership to the BadcacheBridge.
- *      A NFT will be minted once transfer is received
+ *      An ERC721 will be minted once transfer is received
  */
 
 contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder {
