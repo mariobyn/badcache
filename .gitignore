@@ -13,3 +13,5 @@ yarn.lock
 typechain/
 
 .env
+
+.DS_Store

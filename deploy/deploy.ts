@@ -1,17 +1,24 @@
-import {HardhatRuntimeEnvironment} from 'hardhat/types';
-import {DeployFunction} from 'hardhat-deploy/types';
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DeployFunction } from "hardhat-deploy/types";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const {deployments, getNamedAccounts} = hre;
-  const {deploy} = deployments;
+  const { deployments, getNamedAccounts } = hre;
+  const { deploy } = deployments;
 
-  const {deployer} = await getNamedAccounts();
+  const { deployer } = await getNamedAccounts();
 
-  await deploy('BCB', {
+  // await deploy("BadCacheBridge", {
+  //   from: deployer,
+  //   args: [],
+  //   log: true,
+  // });
+
+  await deploy("BadCache721", {
     from: deployer,
-    args: [],
+    args: ["BadCache721", "BadCache721"],
     log: true,
   });
 };
 export default func;
-func.tags = ['BCB'];
+// func.tags = ["BadCacheBridge"];
+func.tags = ["BadCache721"];

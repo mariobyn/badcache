@@ -7,7 +7,6 @@ pragma solidity ^0.8.6;
     A NFT will be minted once the receipt of the transfer is being validated
  */
 
-import "hardhat/console.sol";
 import "./BadCacheBridge.sol";
 
 contract BadCacheBridgeTest is BadCacheBridge {
