@@ -1,11 +1,10 @@
-//SPDX-License-Identifier: Unlicense
+//SPDX-License-Identifier: CC-BY-NC-ND-4.0
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "hardhat/console.sol";
 import "./OpenSeaIERC1155.sol";
 import "./BadCache721.sol";
 
@@ -37,6 +36,12 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   // Allowed tokens ids (from OpenSea)
   uint256[] internal allowedTokens;
 
+  // Maps an old token id with a new token id oldTokenId=>newTokenId
+  mapping(uint256 => uint16) internal oldNewTokenIdPairs;
+
+  // Keeps an array of new token ids that are allowed to be minted
+  uint16[] internal newTokenIds;
+
   event ReceivedTransferFromOpenSea(
     address indexed _sender,
     address indexed _receiver,
@@ -67,12 +72,16 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   function mintBasedOnReceiving(address _sender, uint256 _tokenId) internal returns (bool) {
     require(_sender != address(0), "BadCacheBridge: can not mint a new token to the zero address");
     require(isTokenAllowed(_tokenId), "BadCacheBridge: token id does not exists");
+    uint256 newTokenId = oldNewTokenIdPairs[_tokenId];
+    require(!BadCache721(badCache721).exists(newTokenId), "BadCacheBridge: token already minted");
+    require(newTokenId != 0, "BadCacheBridge: new token id does not exists");
 
-    require(!BadCache721(badCache721).exists(_tokenId), "BadCacheBridge: token already minted");
-    BadCache721(badCache721).mint(address(this), _tokenId);
-    BadCache721(badCache721).setTokenUri(_tokenId, getURIById(_tokenId));
-    BadCache721(badCache721).safeTransferFrom(address(this), _sender, _tokenId);
-    emit MintedBadCache721(_sender, _tokenId);
+    BadCache721(badCache721).mint(address(this), newTokenId);
+
+    BadCache721(badCache721).setTokenUri(newTokenId, getURIById(newTokenId));
+
+    BadCache721(badCache721).safeTransferFrom(address(this), _sender, newTokenId);
+    emit MintedBadCache721(_sender, newTokenId);
 
     return true;
   }
@@ -175,7 +184,7 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
    * - `_tokenId` needs to be part of our allowedIds.
    */
   function getURIById(uint256 _tokenId) private view returns (string memory) {
-    require(isTokenAllowed(_tokenId), "BadCacheBridge: token id does not exists");
+    require(isNewTokenAllowed(_tokenId), "BadCacheBridge: token id does not exists");
     return tokenURIs[_tokenId];
   }
 
@@ -208,30 +217,77 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   }
 
   /**
+   * @dev checks if it's part of the new allowed tokens
+   */
+  function isNewTokenAllowed(uint256 _tokenId) private view returns (bool) {
+    for (uint128 i = 0; i < newTokenIds.length; i++) {
+      if (newTokenIds[i] == _tokenId) return true;
+    }
+    return false;
+  }
+
+  /**
    * @dev initiation of the allowed tokens
    */
   function initAllowedTokens() private {
-    addAllowedToken(1, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=1.png");
-    addAllowedToken(2, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=2.png");
-    addAllowedToken(3, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=3.png");
-    addAllowedToken(4, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=4.png");
-    addAllowedToken(5, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=5.png");
-    addAllowedToken(6, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=6.png");
-    addAllowedToken(7, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=7.png");
-    addAllowedToken(8, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=8.png");
-    addAllowedToken(9, "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=9.png");
-    // addAllowedToken(
-    //   85601406272210854214775655996269203562327957411057160318308680236048612065281,
-    //   "https://ipfs.io/ipfs/QmaNsZbtuJ66NUJMkhynTmjpjkkwy6BWhp4JvyjGginETN/31.png"
-    // );
-    // addAllowedToken(
-    //   85601406272210854214775655996269203562327957411057160318308680267934449270785,
-    //   "https://ipfs.io/ipfs/QmaNsZbtuJ66NUJMkhynTmjpjkkwy6BWhp4JvyjGginETN/60.png"
-    // );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955421657694994433,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=1.jpeg",
+      1
+    );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955422757206622209,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=2.jpeg",
+      2
+    );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955423856718249985,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=3.jpeg",
+      3
+    );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955424956229877761,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=4.jpeg",
+      4
+    );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955426055741505537,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=5.jpeg",
+      5
+    );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955427155253133313,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=6.jpeg",
+      6
+    );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955428254764761089,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=7.jpeg",
+      7
+    );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955429354276388865,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=8.jpeg",
+      8
+    );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955430453788016641,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=9.jpeg",
+      9
+    );
   }
 
-  function addAllowedToken(uint256 _tokenId, string memory _uri) public onlyOwner {
-    tokenURIs[_tokenId] = _uri;
+  /**
+   * @dev the owner can add new tokens into the allowed tokens list
+   */
+  function addAllowedToken(
+    uint256 _tokenId,
+    string memory _uri,
+    uint16 _newTokenId
+  ) public onlyOwner {
     allowedTokens.push(_tokenId);
+    oldNewTokenIdPairs[_tokenId] = _newTokenId;
+    newTokenIds.push(_newTokenId);
+    tokenURIs[_newTokenId] = _uri;
   }
 }

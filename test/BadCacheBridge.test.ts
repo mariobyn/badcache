@@ -32,6 +32,7 @@ describe("BadCache Bridge Test", () => {
 
     BridgeFactory = (await ethers.getContractFactory("BadCacheBridgeTest", owner)) as BadCacheBridgeTest__factory;
 
+    // we mimic an ERC1155 from OpenSea just for testing purposes
     OpenSeaTokenFactory = (await ethers.getContractFactory("OpenSeaERC1155", owner)) as OpenSeaERC1155__factory;
 
     BadCache721Factory = (await ethers.getContractFactory("BadCache721", owner)) as BadCache721__factory;
@@ -54,34 +55,72 @@ describe("BadCache Bridge Test", () => {
   });
 
   it("It checks balances of the owner address and the wallet that we need to transfer to using the token and bridge", async () => {
-    expect(await OpenSeaToken.balanceOf(owner.address, 1)).to.equals(10);
-    expect(await Bridge.checkBalance(owner.address, 1)).to.equals(10);
-    expect(await Bridge.checkBalance(walletTo.address, 1)).to.equals(0);
+    expect(
+      await OpenSeaToken.balanceOf(owner.address, "23206585376031660214193587638946525563951523460783169084504955421657694994433")
+    ).to.equals(1);
+    expect(
+      await Bridge.checkBalance(owner.address, "23206585376031660214193587638946525563951523460783169084504955421657694994433")
+    ).to.equals(1);
+    expect(
+      await Bridge.checkBalance(walletTo.address, "23206585376031660214193587638946525563951523460783169084504955421657694994433")
+    ).to.equals(0);
   });
 
   it("It can use safeTransferFrom from ERC1155", async () => {
-    expect(await OpenSeaToken.balanceOf(owner.address, 1)).to.equals(10);
-    expect(await Bridge.checkBalance(owner.address, 1)).to.equals(10);
-    expect(await Bridge.checkBalance(walletTo.address, 1)).to.equals(0);
+    expect(
+      await OpenSeaToken.balanceOf(owner.address, "23206585376031660214193587638946525563951523460783169084504955421657694994433")
+    ).to.equals(1);
+    expect(
+      await Bridge.checkBalance(owner.address, "23206585376031660214193587638946525563951523460783169084504955421657694994433")
+    ).to.equals(1);
+    expect(
+      await Bridge.checkBalance(walletTo.address, "23206585376031660214193587638946525563951523460783169084504955421657694994433")
+    ).to.equals(0);
 
-    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 1, 1, []))
+    expect(
+      await OpenSeaToken.connect(owner).safeTransferFrom(
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955421657694994433",
+        1,
+        []
+      )
+    )
       .to.emit(Bridge, "ReceivedTransferFromOpenSea")
-      .withArgs(owner.address, owner.address, 1, 1)
+      .withArgs(owner.address, owner.address, "23206585376031660214193587638946525563951523460783169084504955421657694994433", 1)
       .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(owner.address, owner.address, Bridge.address, 1, 1);
+      .withArgs(
+        owner.address,
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955421657694994433",
+        1
+      );
 
-    expect(await Bridge.checkBalance(owner.address, 1)).to.equals(9);
-    expect(await Bridge.checkBalance(Bridge.address, 1)).to.equals(1);
+    expect(
+      await Bridge.checkBalance(owner.address, "23206585376031660214193587638946525563951523460783169084504955421657694994433")
+    ).to.equals(0);
+    expect(
+      await Bridge.checkBalance(Bridge.address, "23206585376031660214193587638946525563951523460783169084504955421657694994433")
+    ).to.equals(1);
   });
 
   it("It can update transfers number, senders array and transfers array", async () => {
-    expect(await Bridge.callStatic.updateTransfersPublic(owner.address, 1)).to.equals(1);
+    expect(
+      await Bridge.callStatic.updateTransfersPublic(
+        owner.address,
+        "23206585376031660214193587638946525563951523460783169084504955421657694994433"
+      )
+    ).to.equals(1);
   });
 
   it("It can not update transfers number, senders array and transfers array from address(0)", async () => {
-    await expect(Bridge.callStatic.updateTransfersPublic("0x0000000000000000000000000000000000000000", 1)).to.be.revertedWith(
-      "BadCacheBridge: can not update from the zero address"
-    );
+    await expect(
+      Bridge.callStatic.updateTransfersPublic(
+        "0x0000000000000000000000000000000000000000",
+        "23206585376031660214193587638946525563951523460783169084504955421657694994433"
+      )
+    ).to.be.revertedWith("BadCacheBridge: can not update from the zero address");
   });
 
   it("It can not update transfers number, senders array and transfers for a token id that does not exists", async () => {
@@ -91,17 +130,26 @@ describe("BadCache Bridge Test", () => {
   });
 
   it("It can not mint 721 from address 0", async () => {
-    await expect(Bridge.mintBasedOnReceivingPublic("0x0000000000000000000000000000000000000000", 1)).to.be.revertedWith(
-      "BadCacheBridge: can not mint a new token to the zero address"
-    );
+    await expect(
+      Bridge.mintBasedOnReceivingPublic(
+        "0x0000000000000000000000000000000000000000",
+        "23206585376031660214193587638946525563951523460783169084504955421657694994433"
+      )
+    ).to.be.revertedWith("BadCacheBridge: can not mint a new token to the zero address");
   });
 
   it("It will not mint a 721 because it was already minted", async () => {
-    await Bridge.mintBasedOnReceivingPublic(walletTest1.address, 4);
-    expect(await BadCache721.connect(owner).balanceOf(walletTest1.address)).to.equals(1);
-    await expect(Bridge.mintBasedOnReceivingPublic(walletTest1.address, 4)).to.be.revertedWith(
-      "BadCacheBridge: token already minted"
+    await Bridge.mintBasedOnReceivingPublic(
+      walletTest1.address,
+      "23206585376031660214193587638946525563951523460783169084504955429354276388865"
     );
+    expect(await BadCache721.connect(owner).balanceOf(walletTest1.address)).to.equals(1);
+    await expect(
+      Bridge.mintBasedOnReceivingPublic(
+        walletTest1.address,
+        "23206585376031660214193587638946525563951523460783169084504955429354276388865"
+      )
+    ).to.be.revertedWith("BadCacheBridge: token already minted");
   });
 
   it("It can not mint 721 for a token that does not exists", async () => {
@@ -111,30 +159,83 @@ describe("BadCache Bridge Test", () => {
   });
 
   it("It can validate a transfer being saved into the Bridge internal storage", async () => {
-    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 5, 1, []))
+    expect(
+      await OpenSeaToken.connect(owner).safeTransferFrom(
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955426055741505537",
+        1,
+        []
+      )
+    )
       .to.emit(Bridge, "ReceivedTransferFromOpenSea")
-      .withArgs(owner.address, owner.address, 5, 1)
+      .withArgs(owner.address, owner.address, "23206585376031660214193587638946525563951523460783169084504955426055741505537", 1)
       .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(owner.address, owner.address, Bridge.address, 5, 1);
+      .withArgs(
+        owner.address,
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955426055741505537",
+        1
+      );
 
-    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, walletTest2.address, 6, 1, []))
+    expect(
+      await OpenSeaToken.connect(owner).safeTransferFrom(
+        owner.address,
+        walletTest2.address,
+        "23206585376031660214193587638946525563951523460783169084504955427155253133313",
+        1,
+        []
+      )
+    )
       .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(owner.address, owner.address, walletTest2.address, 6, 1);
+      .withArgs(
+        owner.address,
+        owner.address,
+        walletTest2.address,
+        "23206585376031660214193587638946525563951523460783169084504955427155253133313",
+        1
+      );
 
-    await expect(OpenSeaToken.connect(walletTest2).safeTransferFrom(walletTest2.address, Bridge.address, 6, 1, []))
+    await expect(
+      OpenSeaToken.connect(walletTest2).safeTransferFrom(
+        walletTest2.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955427155253133313",
+        1,
+        []
+      )
+    )
       .to.emit(Bridge, "ReceivedTransferFromOpenSea")
-      .withArgs(walletTest2.address, walletTest2.address, 6, 1)
+      .withArgs(
+        walletTest2.address,
+        walletTest2.address,
+        "23206585376031660214193587638946525563951523460783169084504955427155253133313",
+        1
+      )
       .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(walletTest2.address, walletTest2.address, Bridge.address, 6, 1);
+      .withArgs(
+        walletTest2.address,
+        walletTest2.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955427155253133313",
+        1
+      );
 
     expect(await Bridge.getTransferCount()).to.equals(2);
     expect(await Bridge.getAddressesThatTransferedIds()).to.eql([owner.address, walletTest2.address]);
   });
 
   it("It can not accept a token from not an owner", async () => {
-    await expect(OpenSeaToken.connect(owner).safeTransferFrom(walletTo.address, Bridge.address, 1, 1, [])).to.be.revertedWith(
-      "ERC1155: caller is not owner nor approved"
-    );
+    await expect(
+      OpenSeaToken.connect(owner).safeTransferFrom(
+        walletTo.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955421657694994433",
+        1,
+        []
+      )
+    ).to.be.revertedWith("ERC1155: caller is not owner nor approved");
   });
 
   it("It can not accept a token that is not allowed", async () => {
@@ -144,70 +245,155 @@ describe("BadCache Bridge Test", () => {
   });
 
   it("It can return ids", async () => {
-    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 7, 1, []))
+    expect(
+      await OpenSeaToken.connect(owner).safeTransferFrom(
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955428254764761089",
+        1,
+        []
+      )
+    )
       .to.emit(Bridge, "ReceivedTransferFromOpenSea")
-      .withArgs(owner.address, owner.address, 7, 1)
+      .withArgs(owner.address, owner.address, "23206585376031660214193587638946525563951523460783169084504955428254764761089", 1)
       .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(owner.address, owner.address, Bridge.address, 7, 1);
+      .withArgs(
+        owner.address,
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955428254764761089",
+        1
+      );
 
     //There are 7 transfers done till here if you run all tests, otherwise you need to adjust accordingly
-    let arr = [BigNumber.from("7")];
+    let arr = [BigNumber.from("23206585376031660214193587638946525563951523460783169084504955428254764761089")];
     expect(await Bridge.getTransferCount()).to.equals(1);
 
     expect(await Bridge.getIds()).to.eql(arr);
   });
 
   it("It can mint 721 based on receiving", async () => {
-    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, walletTest3.address, 2, 1, []))
-      .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(owner.address, owner.address, walletTest3.address, 2, 1);
-
-    expect(await OpenSeaToken.connect(walletTest3).safeTransferFrom(walletTest3.address, Bridge.address, 2, 1, []))
-      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
-      .withArgs(walletTest3.address, walletTest3.address, 2, 1)
-      .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(walletTest3.address, walletTest3.address, Bridge.address, 2, 1);
-
-    expect(await BadCache721.connect(walletTest3).balanceOf(walletTest3.address)).to.equals(1);
-  });
-
-  it("Check the uri of a newly minted token", async () => {
-    expect(await OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 3, 1, []))
-      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
-      .withArgs(owner.address, owner.address, 3, 1)
-      .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(owner.address, owner.address, Bridge.address, 3, 1);
-
-    expect(await BadCache721.connect(owner).tokenURI(3)).to.equals(
-      "https://ipfs.io/ipfs/QmPscS43EqfKpWTFSpSLqKi1W84NJrnfPqovfFqRQoyG7c?filename=3.png"
-    );
-  });
-
-  xit("Check  transfer of new token", async () => {
     expect(
       await OpenSeaToken.connect(owner).safeTransferFrom(
         owner.address,
+        walletTest3.address,
+        "23206585376031660214193587638946525563951523460783169084504955422757206622209",
+        1,
+        []
+      )
+    )
+      .to.emit(OpenSeaToken, "TransferSingle")
+      .withArgs(
         owner.address,
-        "85601406272210854214775655996269203562327957411057160318308680267934449270785",
+        owner.address,
+        walletTest3.address,
+        "23206585376031660214193587638946525563951523460783169084504955422757206622209",
+        1
+      );
+
+    expect(
+      await OpenSeaToken.connect(walletTest3).safeTransferFrom(
+        walletTest3.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955422757206622209",
         1,
         []
       )
     )
       .to.emit(Bridge, "ReceivedTransferFromOpenSea")
-      .withArgs(owner.address, Bridge.address, "85601406272210854214775655996269203562327957411057160318308680267934449270785", 1)
+      .withArgs(
+        walletTest3.address,
+        walletTest3.address,
+        "23206585376031660214193587638946525563951523460783169084504955422757206622209",
+        1
+      )
+      .to.emit(OpenSeaToken, "TransferSingle")
+      .withArgs(
+        walletTest3.address,
+        walletTest3.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955422757206622209",
+        1
+      );
+
+    expect(await BadCache721.connect(walletTest3).balanceOf(walletTest3.address)).to.equals(1);
+  });
+
+  it("Check the uri of a newly minted token", async () => {
+    expect(
+      await OpenSeaToken.connect(owner).safeTransferFrom(
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955423856718249985",
+        1,
+        []
+      )
+    )
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(owner.address, owner.address, "23206585376031660214193587638946525563951523460783169084504955423856718249985", 1)
       .to.emit(OpenSeaToken, "TransferSingle")
       .withArgs(
         owner.address,
         owner.address,
         Bridge.address,
-        "85601406272210854214775655996269203562327957411057160318308680267934449270785",
+        "23206585376031660214193587638946525563951523460783169084504955423856718249985",
         1
       );
 
     expect(
-      await BadCache721.connect(owner).tokenURI("85601406272210854214775655996269203562327957411057160318308680267934449270785")
-    ).to.equals("https://ipfs.io/ipfs/QmaNsZbtuJ66NUJMkhynTmjpjkkwy6BWhp4JvyjGginETN/60.png");
+      await BadCache721.connect(owner).tokenURI(3)
+    ).to.equals("https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=3.jpeg");
   });
+
+  it("Check the ID of a newly minted token", async () => {
+    expect(
+      await OpenSeaToken.connect(owner).safeTransferFrom(
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955430453788016641",
+        1,
+        []
+      )
+    )
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(owner.address, owner.address, "23206585376031660214193587638946525563951523460783169084504955430453788016641", 1)
+      .to.emit(OpenSeaToken, "TransferSingle")
+      .withArgs(
+        owner.address,
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955430453788016641",
+        1
+      );
+
+    expect(await BadCache721.connect(owner).ownerOf(9)).to.equals(owner.address);
+  });
+
+  // xit("Check  transfer of new token", async () => {
+  //   expect(
+  //     await OpenSeaToken.connect(owner).safeTransferFrom(
+  //       owner.address,
+  //       owner.address,
+  //       "85601406272210854214775655996269203562327957411057160318308680267934449270785",
+  //       1,
+  //       []
+  //     )
+  //   )
+  //     .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+  //     .withArgs(owner.address, Bridge.address, "85601406272210854214775655996269203562327957411057160318308680267934449270785", 1)
+  //     .to.emit(OpenSeaToken, "TransferSingle")
+  //     .withArgs(
+  //       owner.address,
+  //       owner.address,
+  //       Bridge.address,
+  //       "85601406272210854214775655996269203562327957411057160318308680267934449270785",
+  //       1
+  //     );
+
+  //   expect(
+  //     await BadCache721.connect(owner).tokenURI("85601406272210854214775655996269203562327957411057160318308680267934449270785")
+  //   ).to.equals("https://ipfs.io/ipfs/QmaNsZbtuJ66NUJMkhynTmjpjkkwy6BWhp4JvyjGginETN/60.png");
+  // });
 
   //This one should be used only with hardhat network cause hardhat network is forking the mainnate so the account and the opentoken from opensea
   // xit("It can check balance of impersonator", async () => {
