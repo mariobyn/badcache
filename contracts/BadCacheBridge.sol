@@ -28,7 +28,7 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   mapping(uint128 => mapping(address => uint256)) internal transfers;
 
   // BadCache721 token that it will be minted based on receiving
-  address internal badCache721 = 0x495f947276749Ce646f68AC8c248420045cb7b5e;
+  address internal badCache721 = 0x0000000000000000000000000000000000000000;
 
   // Storing token URIs for allowed tokens id->tokeUri
   mapping(uint256 => string) internal tokenURIs;
@@ -41,6 +41,9 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
 
   // Keeps an array of new token ids that are allowed to be minted
   uint16[] internal newTokenIds;
+
+  // Keeps an array of custom 721 tokens
+  uint256[] internal custom721Ids;
 
   event ReceivedTransferFromOpenSea(
     address indexed _sender,
@@ -72,16 +75,13 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   function mintBasedOnReceiving(address _sender, uint256 _tokenId) internal returns (bool) {
     require(_sender != address(0), "BadCacheBridge: can not mint a new token to the zero address");
     require(isTokenAllowed(_tokenId), "BadCacheBridge: token id does not exists");
+
     uint256 newTokenId = oldNewTokenIdPairs[_tokenId];
+
     require(!BadCache721(badCache721).exists(newTokenId), "BadCacheBridge: token already minted");
     require(newTokenId != 0, "BadCacheBridge: new token id does not exists");
 
-    BadCache721(badCache721).mint(address(this), newTokenId);
-
-    BadCache721(badCache721).setTokenUri(newTokenId, getURIById(newTokenId));
-
-    BadCache721(badCache721).safeTransferFrom(address(this), _sender, newTokenId);
-    emit MintedBadCache721(_sender, newTokenId);
+    _mint721(newTokenId, _sender, getURIById(newTokenId));
 
     return true;
   }
@@ -115,7 +115,7 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
    * - `_token` must not be address zero
    */
   function setBadCache721(address _token) public onlyOwner {
-    require(_token != address(0), "BadCacheBridge: can not set as proxy the address zero");
+    require(_token != address(0), "BadCacheBridge: can not set as BadCache721 the address zero");
 
     badCache721 = _token;
   }
@@ -177,15 +177,14 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   }
 
   /**
-   * @dev get URI by token id from allowed tokens
-   *
-   * Requirements:
-   *
-   * - `_tokenId` needs to be part of our allowedIds.
+   * @dev get ids of custom 721 tokens that were minted
    */
-  function getURIById(uint256 _tokenId) private view returns (string memory) {
-    require(isNewTokenAllowed(_tokenId), "BadCacheBridge: token id does not exists");
-    return tokenURIs[_tokenId];
+  function getCustomIds() public view returns (uint256[] memory) {
+    uint256[] memory ids = new uint256[](custom721Ids.length);
+    for (uint128 i = 0; i < custom721Ids.length; i++) {
+      ids[i] = custom721Ids[i];
+    }
+    return ids;
   }
 
   /**
@@ -207,6 +206,578 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   }
 
   /**
+   * @dev the owner can add new tokens into the allowed tokens list
+   */
+  function addAllowedToken(
+    uint256 _tokenId,
+    string memory _uri,
+    uint16 _newTokenId
+  ) public onlyOwner {
+    allowedTokens.push(_tokenId);
+    oldNewTokenIdPairs[_tokenId] = _newTokenId;
+    newTokenIds.push(_newTokenId);
+    tokenURIs[_newTokenId] = _uri;
+  }
+
+  /**
+   * @dev mint a custom 721 token by the owner
+   */
+  function mintBadCache721(
+    uint256 _tokenId,
+    string memory _uri,
+    address _owner
+  ) public onlyOwner {
+    require(_owner != address(0), "BadCacheBridge: can not mint a new token to the zero address");
+    require(!BadCache721(badCache721).exists(_tokenId), "BadCacheBridge: token already minted");
+    _mint721(_tokenId, _owner, _uri);
+    custom721Ids.push(_tokenId);
+    tokenURIs[_tokenId] = _uri;
+  }
+
+  /**
+   * @dev transfers the ownership of BadCache721 token
+   */
+  function transferOwnershipOf721(address _newOwner) public onlyOwner {
+    require(_newOwner != address(0), "BadCacheBridge: new owner can not be the zero address");
+    BadCache721(badCache721).transferOwnership(_newOwner);
+  }
+
+  /**
+   * @dev get URI by token id from allowed tokens
+   *
+   * Requirements:
+   *
+   * - `_tokenId` needs to be part of our allowedIds.
+   */
+  function getURIById(uint256 _tokenId) private view returns (string memory) {
+    require(isNewTokenAllowed(_tokenId), "BadCacheBridge: token id does not exists");
+    return tokenURIs[_tokenId];
+  }
+
+  /**
+   * @dev minting function and transfer to the owner
+   *
+   */
+  function _mint721(
+    uint256 _tokenId,
+    address _owner,
+    string memory _tokenURI
+  ) private {
+    BadCache721(badCache721).mint(address(this), _tokenId);
+
+    BadCache721(badCache721).setTokenUri(_tokenId, _tokenURI);
+
+    BadCache721(badCache721).safeTransferFrom(address(this), _owner, _tokenId);
+    emit MintedBadCache721(_owner, _tokenId);
+  }
+
+  /**
+   * @dev initiation of the allowed tokens
+   */
+  function initAllowedTokens() private {
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680203063263232001,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/1.json",
+      1
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680204162774859777,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/2.json",
+      2
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680205262286487553,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/3.json",
+      3
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680206361798115329,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/4.json",
+      4
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680207461309743105,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/5.json",
+      5
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680208560821370881,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/6.json",
+      6
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680209660332998657,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/7.json",
+      7
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680210759844626433,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/8.json",
+      8
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680211859356254209,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/9.json",
+      9
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680212958867881985,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/10.json",
+      10
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680214058379509761,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/11.json",
+      11
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680215157891137537,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/12.json",
+      12
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680216257402765313,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/13.json",
+      13
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680217356914393089,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/14.json",
+      14
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680218456426020865,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/15.json",
+      15
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680219555937648641,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/16.json",
+      16
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680220655449276417,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/17.json",
+      17
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680221754960904193,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/18.json",
+      18
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680222854472531969,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/19.json",
+      19
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680223953984159745,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/20.json",
+      20
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680225053495787521,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/21.json",
+      21
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680226153007415297,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/22.json",
+      22
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680227252519043073,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/23.json",
+      23
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680228352030670849,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/24.json",
+      24
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680229451542298625,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/25.json",
+      25
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680230551053926401,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/26.json",
+      26
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680231650565554177,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/27.json",
+      27
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680232750077181953,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/28.json",
+      28
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680233849588809729,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/29.json",
+      29
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680234949100437505,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/30.json",
+      30
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680236048612065281,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/31.json",
+      31
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680237148123693057,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/32.json",
+      32
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680238247635320833,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/33.json",
+      33
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680239347146948609,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/34.json",
+      34
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680240446658576385,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/35.json",
+      35
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680241546170204161,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/36.json",
+      36
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680242645681831937,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/37.json",
+      37
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680243745193459713,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/38.json",
+      38
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680244844705087489,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/39.json",
+      39
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680245944216715265,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/40.json",
+      40
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680247043728343041,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/41.json",
+      41
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680248143239970817,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/42.json",
+      42
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680249242751598593,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/43.json",
+      43
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680250342263226369,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/44.json",
+      44
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680251441774854145,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/45.json",
+      45
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680252541286481921,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/46.json",
+      46
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680253640798109697,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/47.json",
+      47
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680254740309737473,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/48.json",
+      48
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680255839821365249,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/49.json",
+      49
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680256939332993025,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/50.json",
+      50
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680258038844620801,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/51.json",
+      51
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680259138356248577,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/52.json",
+      52
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680260237867876353,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/53.json",
+      53
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680261337379504129,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/54.json",
+      54
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680262436891131905,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/55.json",
+      55
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680263536402759681,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/56.json",
+      56
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680264635914387457,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/57.json",
+      57
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680265735426015233,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/58.json",
+      58
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680266834937643009,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/59.json",
+      59
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680267934449270785,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/60.json",
+      60
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680269033960898561,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/61.json",
+      61
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680270133472526337,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/62.json",
+      62
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680271232984154113,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/63.json",
+      63
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680272332495781889,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/64.json",
+      64
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680273432007409665,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/65.json",
+      65
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680274531519037441,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/66.json",
+      66
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680275631030665217,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/67.json",
+      67
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680276730542292993,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/68.json",
+      68
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680277830053920769,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/69.json",
+      69
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680278929565548545,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/70.json",
+      70
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680280029077176321,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/71.json",
+      71
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680281128588804097,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/72.json",
+      72
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680282228100431873,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/73.json",
+      73
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680283327612059649,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/74.json",
+      74
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680284427123687425,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/75.json",
+      75
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680285526635315201,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/76.json",
+      76
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680286626146942977,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/77.json",
+      77
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680287725658570753,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/78.json",
+      78
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680288825170198529,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/79.json",
+      79
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680289924681826305,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/80.json",
+      80
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680291024193454081,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/81.json",
+      81
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680292123705081857,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/82.json",
+      82
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680293223216709633,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/83.json",
+      83
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680294322728337409,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/84.json",
+      84
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680295422239965185,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/85.json",
+      85
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680296521751592961,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/86.json",
+      86
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680297621263220737,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/87.json",
+      87
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680298720774848513,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/88.json",
+      88
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680299820286476289,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/89.json",
+      89
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680300919798104065,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/90.json",
+      90
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680302019309731841,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/91.json",
+      91
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680303118821359617,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/92.json",
+      92
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680304218332987393,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/93.json",
+      93
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680305317844615169,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/94.json",
+      94
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680306417356242945,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/95.json",
+      95
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680307516867870721,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/96.json",
+      96
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680308616379498497,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/97.json",
+      97
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680309715891126273,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/98.json",
+      98
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680310815402754049,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/99.json",
+      99
+    );
+    addAllowedToken(
+      85601406272210854214775655996269203562327957411057160318308680311914914381825,
+      "https://gateway.pinata.cloud/ipfs/QmYSUKeq5Dt8M2RBt7u9f63QwWvdPNawr6Gjc47jdaUr5C/100.json",
+      100
+    );
+  }
+
+  /**
    * @dev checks if it's part of the allowed tokens
    */
   function isTokenAllowed(uint256 _tokenId) private view returns (bool) {
@@ -224,70 +795,5 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
       if (newTokenIds[i] == _tokenId) return true;
     }
     return false;
-  }
-
-  /**
-   * @dev initiation of the allowed tokens
-   */
-  function initAllowedTokens() private {
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955421657694994433,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=1.jpeg",
-      1
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955422757206622209,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=2.jpeg",
-      2
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955423856718249985,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=3.jpeg",
-      3
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955424956229877761,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=4.jpeg",
-      4
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955426055741505537,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=5.jpeg",
-      5
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955427155253133313,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=6.jpeg",
-      6
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955428254764761089,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=7.jpeg",
-      7
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955429354276388865,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=8.jpeg",
-      8
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955430453788016641,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=9.jpeg",
-      9
-    );
-  }
-
-  /**
-   * @dev the owner can add new tokens into the allowed tokens list
-   */
-  function addAllowedToken(
-    uint256 _tokenId,
-    string memory _uri,
-    uint16 _newTokenId
-  ) public onlyOwner {
-    allowedTokens.push(_tokenId);
-    oldNewTokenIdPairs[_tokenId] = _newTokenId;
-    newTokenIds.push(_newTokenId);
-    tokenURIs[_newTokenId] = _uri;
   }
 }

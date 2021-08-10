@@ -340,9 +340,9 @@ describe("BadCache Bridge Test", () => {
         1
       );
 
-    expect(
-      await BadCache721.connect(owner).tokenURI(3)
-    ).to.equals("https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=3.jpeg");
+    expect(await BadCache721.connect(owner).tokenURI(3)).to.equals(
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=3.jpeg"
+    );
   });
 
   it("Check the ID of a newly minted token", async () => {
@@ -369,52 +369,69 @@ describe("BadCache Bridge Test", () => {
     expect(await BadCache721.connect(owner).ownerOf(9)).to.equals(owner.address);
   });
 
-  // xit("Check  transfer of new token", async () => {
-  //   expect(
-  //     await OpenSeaToken.connect(owner).safeTransferFrom(
-  //       owner.address,
-  //       owner.address,
-  //       "85601406272210854214775655996269203562327957411057160318308680267934449270785",
-  //       1,
-  //       []
-  //     )
-  //   )
-  //     .to.emit(Bridge, "ReceivedTransferFromOpenSea")
-  //     .withArgs(owner.address, Bridge.address, "85601406272210854214775655996269203562327957411057160318308680267934449270785", 1)
-  //     .to.emit(OpenSeaToken, "TransferSingle")
-  //     .withArgs(
-  //       owner.address,
-  //       owner.address,
-  //       Bridge.address,
-  //       "85601406272210854214775655996269203562327957411057160318308680267934449270785",
-  //       1
-  //     );
+  it("It can mint custom 721", async () => {
+    expect(
+      await Bridge.connect(owner).mintBadCache721(
+        100000,
+        "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=CUSTOM.jpeg",
+        walletTest3.address
+      )
+    )
+      .to.emit(Bridge, "MintedBadCache721")
+      .withArgs(walletTest3.address, 100000);
 
-  //   expect(
-  //     await BadCache721.connect(owner).tokenURI("85601406272210854214775655996269203562327957411057160318308680267934449270785")
-  //   ).to.equals("https://ipfs.io/ipfs/QmaNsZbtuJ66NUJMkhynTmjpjkkwy6BWhp4JvyjGginETN/60.png");
-  // });
+    let arr = [BigNumber.from(100000)];
+    expect(await Bridge.getCustomIds()).to.eql(arr);
+  });
 
-  //This one should be used only with hardhat network cause hardhat network is forking the mainnate so the account and the opentoken from opensea
-  // xit("It can check balance of impersonator", async () => {
-  //   await hre.network.provider.request({
-  //     method: "hardhat_impersonateAccount",
-  //     params: ["0x358100c75A442a1A40D9aa0662269d320D7F0F2e"],
-  //   });
+  it("It can not mint custom 721 that was already minted", async () => {
+    expect(
+      await Bridge.connect(owner).mintBadCache721(
+        100001,
+        "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=CUSTOM.jpeg",
+        walletTest3.address
+      )
+    )
+      .to.emit(Bridge, "MintedBadCache721")
+      .withArgs(walletTest3.address, 100001);
 
-  //   //OpenSea Shared Storefront (OPENSTORE) https://etherscan.io/address/0x495f947276749ce646f68ac8c248420045cb7b5e
-  //   await Bridge.setProxiedToken("0x495f947276749Ce646f68AC8c248420045cb7b5e");
-  //   //Owner of BadCache: https://opensea.io/assets/0x495f947276749ce646f68ac8c248420045cb7b5e/85601406272210854214775655996269203562327957411057160318308680236048612065281
-  //   // https://etherscan.io/address/0x358100c75A442a1A40D9aa0662269d320D7F0F2e (zerobeta.eth)
-  //   owner = await ethers.getSigner("0x358100c75A442a1A40D9aa0662269d320D7F0F2e");
+    await expect(
+      Bridge.connect(owner).mintBadCache721(
+        100001,
+        "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=CUSTOM.jpeg",
+        walletTest3.address
+      )
+    ).to.be.revertedWith("BadCacheBridge: token already minted");
+  });
 
-  //   expect(
-  //     await Bridge.checkBalance(owner.address, "85601406272210854214775655996269203562327957411057160318308680236048612065281")
-  //   ).to.equals(1);
+  it("It can not mint custom 721 by not the bridge owner", async () => {
+    await expect(
+      Bridge.connect(walletTest3).mintBadCache721(
+        100001,
+        "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=CUSTOM.jpeg",
+        walletTest3.address
+      )
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
 
-  //   await hre.network.provider.request({
-  //     method: "hardhat_stopImpersonatingAccount",
-  //     params: ["0x358100c75A442a1A40D9aa0662269d320D7F0F2e"],
-  //   });
-  // });
+  it("It can not addAllowedTokens by not the birdge owner", async () => {
+    await expect(
+      Bridge.connect(walletTest3).addAllowedToken(
+        100000,
+        "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=CUSTOM.jpeg",
+        100
+      )
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("It can transfer ownership of BadCache721", async () => {
+    await Bridge.connect(owner).transferOwnershipOf721(walletTest3.address);
+    expect(await BadCache721.connect(walletTest3).owner()).to.equals(walletTest3.address);
+  });
+
+  it("It can not transfer ownership of BadCache721 to the zero address", async () => {
+    await expect(Bridge.connect(owner).transferOwnershipOf721("0x0000000000000000000000000000000000000000")).to.be.revertedWith(
+      "BadCacheBridge: new owner can not be the zero address"
+    );
+  });
 });

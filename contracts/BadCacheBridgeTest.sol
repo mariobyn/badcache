@@ -7,10 +7,10 @@ pragma solidity ^0.8.6;
     A NFT will be minted once the receipt of the transfer is being validated
  */
 
-import "./BadCacheBridge.sol";
+import "./BadCacheBridgeRinkeby.sol";
 
-contract BadCacheBridgeTest is BadCacheBridge {
-  constructor() onlyOwner BadCacheBridge() {}
+contract BadCacheBridgeTest is BadCacheBridgeRinkeby {
+  constructor() onlyOwner BadCacheBridgeRinkeby() {}
 
   function updateTransfersPublic(address _sender, uint256 _tokenId) public onlyOwner returns (uint256 count) {
     return onReceiveTransfer(_sender, _tokenId);
