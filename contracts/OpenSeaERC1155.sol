@@ -60,11 +60,17 @@ contract OpenSeaERC1155 is ERC1155, ERC1155Holder {
       1,
       "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=9.jpeg"
     );
-     _mint(
+    _mint(
       msg.sender,
       23206585376031660214193587638946525563951523460783169084504955430453788016631,
       1,
       "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=10.jpeg"
+    );
+    _mint(
+      msg.sender,
+      23206585376031660214193587638946525563951523460783169084504955428254764761011,
+      1,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=11.jpeg"
     );
     _mint(msg.sender, 1000, 1, "");
   }
