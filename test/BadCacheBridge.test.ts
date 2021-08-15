@@ -3,7 +3,13 @@ import { BigNumber, Signer, Wallet } from "ethers";
 import { expect } from "chai";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { BadCacheBridgeTest__factory, OpenSeaERC1155__factory, BadCache721__factory } from "../typechain";
+import {
+  BadCacheBridgeTest__factory,
+  OpenSeaERC1155__factory,
+  BadCache721__factory,
+  BadCacheHolder__factory,
+  OpenSeaERC1155Hack__factory,
+} from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 describe("BadCache Bridge Test", () => {
@@ -11,10 +17,14 @@ describe("BadCache Bridge Test", () => {
   let BridgeFactory: any;
 
   let OpenSeaToken: any;
+  let OpenSeaTokenHack: any;
   let OpenSeaTokenFactory: any;
+  let OpenSeaTokenFactoryHack: any;
 
   let BadCache721: any;
   let BadCache721Factory: any;
+  let BadCacheHolder: any;
+  let BadCacheHolderFactory: any;
 
   let owner: SignerWithAddress;
 
@@ -33,17 +43,22 @@ describe("BadCache Bridge Test", () => {
     BridgeFactory = (await ethers.getContractFactory("BadCacheBridgeTest", owner)) as BadCacheBridgeTest__factory;
 
     // we mimic an ERC1155 from OpenSea just for testing purposes
+    OpenSeaTokenFactoryHack = (await ethers.getContractFactory("OpenSeaERC1155Hack", owner)) as OpenSeaERC1155Hack__factory;
     OpenSeaTokenFactory = (await ethers.getContractFactory("OpenSeaERC1155", owner)) as OpenSeaERC1155__factory;
 
     BadCache721Factory = (await ethers.getContractFactory("BadCache721", owner)) as BadCache721__factory;
+    BadCacheHolderFactory = (await ethers.getContractFactory("BadCacheHolder", owner)) as BadCacheHolder__factory;
 
     Bridge = await (await BridgeFactory).deploy();
     OpenSeaToken = await (await OpenSeaTokenFactory).deploy();
+    OpenSeaTokenHack = await (await OpenSeaTokenFactoryHack).deploy();
     BadCache721 = await (await BadCache721Factory).deploy("BadCache721", "BadCache721");
+    BadCacheHolder = await (await BadCacheHolderFactory).deploy();
 
     expect(Bridge.address).to.not.undefined;
     expect(OpenSeaToken.address).to.not.undefined;
     expect(BadCache721.address).to.not.undefined;
+    expect(BadCacheHolder.address).to.not.undefined;
     await BadCache721.connect(owner).transferOwnership(Bridge.address);
     console.log("Created OpenSea Custom ERC1155 Token: " + OpenSeaToken.address);
   });
@@ -103,6 +118,38 @@ describe("BadCache Bridge Test", () => {
     expect(
       await Bridge.checkBalance(Bridge.address, "23206585376031660214193587638946525563951523460783169084504955421657694994433")
     ).to.equals(1);
+  });
+
+  it("It can not safeTransferFrom from ERC1155 that is not OpenSea", async () => {
+    expect(
+      await OpenSeaTokenHack.balanceOf(
+        owner.address,
+        "23206585376031660214193587638946525563951523460783169084504955430453788016631"
+      )
+    ).to.equals(1);
+    expect(
+      await Bridge.checkBalance(owner.address, "23206585376031660214193587638946525563951523460783169084504955430453788016631")
+    ).to.equals(1);
+    expect(
+      await Bridge.checkBalance(walletTo.address, "23206585376031660214193587638946525563951523460783169084504955430453788016631")
+    ).to.equals(0);
+
+    await expect(
+      OpenSeaTokenHack.connect(owner).safeTransferFrom(
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955430453788016631",
+        1,
+        []
+      )
+    ).to.be.revertedWith("BadCacheBridge: This is not an OpenSea token");
+
+    expect(
+      await Bridge.checkBalance(owner.address, "23206585376031660214193587638946525563951523460783169084504955430453788016631")
+    ).to.equals(1);
+    expect(
+      await Bridge.checkBalance(Bridge.address, "23206585376031660214193587638946525563951523460783169084504955430453788016631")
+    ).to.equals(0);
   });
 
   it("It can update transfers number, senders array and transfers array", async () => {
@@ -237,6 +284,8 @@ describe("BadCache Bridge Test", () => {
       )
     ).to.be.revertedWith("ERC1155: caller is not owner nor approved");
   });
+
+  //create a test to reverse transfer a 721 to 1155
 
   it("It can not accept a token that is not allowed", async () => {
     await expect(OpenSeaToken.connect(owner).safeTransferFrom(owner.address, Bridge.address, 1000, 1, [])).to.be.revertedWith(
@@ -433,5 +482,53 @@ describe("BadCache Bridge Test", () => {
     await expect(Bridge.connect(owner).transferOwnershipOf721("0x0000000000000000000000000000000000000000")).to.be.revertedWith(
       "BadCacheBridge: new owner can not be the zero address"
     );
+  });
+
+  it("It can send BadCache721 and send back 1155", async () => {
+    expect(
+      await OpenSeaToken.connect(owner).safeTransferFrom(
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955428254764761089",
+        1,
+        []
+      )
+    )
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(owner.address, owner.address, "23206585376031660214193587638946525563951523460783169084504955428254764761089", 1)
+      .to.emit(OpenSeaToken, "TransferSingle")
+      .withArgs(
+        owner.address,
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955428254764761089",
+        1
+      );
+
+    expect(await BadCache721.connect(owner).ownerOf(7)).to.equals(owner.address);
+    console.log("Sender " + owner.address);
+    console.log("bridge " + Bridge.address);
+    expect(await BadCache721.connect(owner).transferFrom(owner.address, Bridge.address, 7))
+      .to.emit(Bridge, "ReceivedTransferFromBadCache721")
+      .withArgs(owner.address, Bridge.address, 7);
+    expect(
+      await OpenSeaToken.connect(owner).balanceOf(
+        owner.address,
+        "23206585376031660214193587638946525563951523460783169084504955428254764761089"
+      )
+    ).to.equals(1);
+  });
+
+  it("It test", async () => {
+    await BadCache721.connect(owner).mint(owner.address, 100);
+    console.log("Bridge " + Bridge.address);
+    console.log("Owner Of " + (await BadCache721.ownerOf(100)));
+    console.log("Owner " + owner.address);
+
+    await BadCache721.safeTransferFrom(owner.address, BadCacheHolder.address, 100);
+    // expect(await BadCache721.safeTransferFrom(owner.address, BadCacheHolder.address, 100))
+    //   .to.emit(BadCacheHolder, "ReceivedTransferFromBadCache721")
+    //   .withArgs(owner.address, BadCacheHolder.address, 100);
+    // expect(await BadCache721.connect(owner).ownerOf(100)).to.equals(BadCacheHolder.address);
   });
 });

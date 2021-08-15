@@ -2,9 +2,7 @@
 pragma solidity ^0.8.6;
 
 /**
-    This contracts bridges an OpenSea ERC1155 into the new Badcache ERC721.
-    Only owners of BadCache from OpenSea can mint new tokens once they transfer their NFT ownership to the BadcacheBridge. 
-    A NFT will be minted once the receipt of the transfer is being validated
+    Utilitary contract used for testing
  */
 
 import "./BadCacheBridgeRinkeby.sol";
@@ -13,7 +11,7 @@ contract BadCacheBridgeTest is BadCacheBridgeRinkeby {
   constructor() onlyOwner BadCacheBridgeRinkeby() {}
 
   function updateTransfersPublic(address _sender, uint256 _tokenId) public onlyOwner returns (uint256 count) {
-    return onReceiveTransfer(_sender, _tokenId);
+    return onReceiveTransfer1155(_sender, _tokenId);
   }
 
   function mintBasedOnReceivingPublic(address _sender, uint256 _tokenId) public onlyOwner returns (bool) {
