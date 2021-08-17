@@ -127,6 +127,18 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
   }
 
   /**
+   * @dev transfers a BadCache721 Owned by the bridge to another owner
+   * Requirements:
+   *
+   * - `_token` must not be address zero
+   */
+  function transferBadCache721(uint256 _tokenId, address _owner) public onlyOwner isNewTokenAllowed(_tokenId) {
+    require(_owner != address(0), "BadCacheBridge: can not send a BadCache721 to the address zero");
+
+    BadCache721I(badCache721).safeTransferFrom(address(this), _owner, _tokenId);
+  }
+
+  /**
    * @dev check owner of a token on OpenSea token
    */
   function ownerOf1155(uint256 _tokenId) public view returns (bool) {
@@ -375,6 +387,11 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
       23206585376031660214193587638946525563951523460783169084504955430453788016631,
       "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=10.jpeg",
       10
+    );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955430453788016611,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=11.jpeg",
+      11
     );
   }
 

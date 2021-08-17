@@ -125,6 +125,18 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   }
 
   /**
+   * @dev transfers a BadCache721 Owned by the bridge to another owner
+   * Requirements:
+   *
+   * - `_token` must not be address zero
+   */
+  function transferBadCache721(uint256 _tokenId, address _owner) public onlyOwner isNewTokenAllowed(_tokenId) {
+    require(_owner != address(0), "BadCacheBridge: can not send a BadCache721 to the address zero");
+
+    BadCache721I(badCache721).safeTransferFrom(address(this), _owner, _tokenId);
+  }
+
+  /**
    * @dev check owner of a token on OpenSea token
    */
   function ownerOf1155(uint256 _tokenId) public view returns (bool) {

@@ -473,8 +473,6 @@ describe("BadCache Bridge Test", () => {
     ).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
-  
-
   //hardhat issue, this test needs to be solved
   // it("It can send BadCache721 and send back 1155", async () => {
   //   expect(
