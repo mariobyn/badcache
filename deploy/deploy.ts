@@ -13,12 +13,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
   });
 
-  // await deploy("BadCache721", {
+  // await deploy("BadCache", {
   //   from: deployer,
-  //   args: ["BadCache721", "BadCache721"],
+  //   args: ["BadCache", "BadCache"],
   //   log: true,
   // });
 };
 export default func;
 func.tags = ["BadCacheBridgeRinkeby"];
-// func.tags = ["BadCache721"];
+// func.tags = ["BadCache"];

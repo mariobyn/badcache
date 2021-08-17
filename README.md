@@ -23,12 +23,12 @@ Check the .env-example file (copy this file into a new .env file and complete th
 To deploy on rinkeby, complete in the .env file, the deployer private key, with a private key to a rinkeby wallet that has some eth
 
 Then, in order to deploy to rinkeby, checkout the deploy/deploy.ts file. there are 2 options, we need to deploy BadCacheBridge and
-BadCache721. 
+BadCache. 
 
 For rinkeby we will depoy the BadCacheBridgeRinkeby.sol and for mainnet we will deploy the BadCacheBridge.sol
 
 Make sure you comment/uncomment the right parameters. 
-How it should look like if you want to deploy the BadCache721 on Rinkeby or Mainnet
+How it should look like if you want to deploy the BadCache on Rinkeby or Mainnet
 ```
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre;
@@ -42,15 +42,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   //   log: true,
   // });
 
-  await deploy("BadCache721", {
+  await deploy("BadCache", {
     from: deployer,
-    args: ["BadCache721", "BadCache721"],
+    args: ["BadCache", "BadCache"],
     log: true,
   });
 };
 export default func;
 // func.tags = ["BadCacheBridgeRinkeby"];
-func.tags = ["BadCache721"];
+func.tags = ["BadCache"];
 ```
 How it should look like if you want to deploy the Bridge on Rinkeby
 ```
@@ -66,15 +66,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
   });
 
-  // await deploy("BadCache721", {
+  // await deploy("BadCache", {
   //   from: deployer,
-  //   args: ["BadCache721", "BadCache721"],
+  //   args: ["BadCache", "BadCache"],
   //   log: true,
   // });
 };
 export default func;
 func.tags = ["BadCacheBridgeRinkeby"];
-// func.tags = ["BadCache721"];
+// func.tags = ["BadCache"];
 ```
 
 How it should look like if you want to deploy the Bridge on Mainnet
@@ -92,15 +92,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
   });
 
-  // await deploy("BadCache721", {
+  // await deploy("BadCache", {
   //   from: deployer,
-  //   args: ["BadCache721", "BadCache721"],
+  //   args: ["BadCache", "BadCache"],
   //   log: true,
   // });
 };
 export default func;
 func.tags = ["BadCacheBridge"];
-// func.tags = ["BadCache721"];
+// func.tags = ["BadCache"];
 ```
 
 ### WARNING
@@ -120,5 +120,5 @@ Be careful, use --network rinkeby only if you deploy on rinkeby.
 For the BadCache721 the verify is a little bit different, you will need to pass 2 arguments (Token name and Symbol)
 
 ```
-npx hardhat verify --network rinkeby 0x0324324234...3424 "BadCache721" "BadCache721"
+npx hardhat verify --network rinkeby 0x0324324234...3424 "BadCache" "BadCache"
 ```

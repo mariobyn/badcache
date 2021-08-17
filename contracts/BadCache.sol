@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract BadCache721 is ERC721URIStorage, Ownable {
+contract BadCache is ERC721URIStorage, Ownable {
   constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) {}
 
   function setTokenUri(uint256 _tokenId, string memory _tokenURI) public onlyOwner {

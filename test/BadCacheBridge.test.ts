@@ -6,7 +6,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
   BadCacheBridgeTest__factory,
   OpenSeaERC1155__factory,
-  BadCache721__factory,
+  BadCache__factory,
   BadCacheHolder__factory,
   OpenSeaERC1155Hack__factory,
 } from "../typechain";
@@ -46,12 +46,12 @@ describe("BadCache Bridge Test", () => {
     OpenSeaTokenFactoryHack = (await ethers.getContractFactory("OpenSeaERC1155Hack", owner)) as OpenSeaERC1155Hack__factory;
     OpenSeaTokenFactory = (await ethers.getContractFactory("OpenSeaERC1155", owner)) as OpenSeaERC1155__factory;
 
-    BadCache721Factory = (await ethers.getContractFactory("BadCache721", owner)) as BadCache721__factory;
+    BadCache721Factory = (await ethers.getContractFactory("BadCache", owner)) as BadCache__factory;
 
     Bridge = await (await BridgeFactory).deploy();
     OpenSeaToken = await (await OpenSeaTokenFactory).deploy();
     OpenSeaTokenHack = await (await OpenSeaTokenFactoryHack).deploy();
-    BadCache721 = await (await BadCache721Factory).deploy("BadCache721", "BadCache721");
+    BadCache721 = await (await BadCache721Factory).deploy("BadCache", "BadCache");
 
     expect(Bridge.address).to.not.undefined;
     expect(OpenSeaToken.address).to.not.undefined;

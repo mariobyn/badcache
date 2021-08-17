@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./OpenSeaIERC1155.sol";
-import "./BadCache721I.sol";
+import "./BadCacheI.sol";
 
 /**
  * @dev This contracts bridges an OpenSea ERC1155 into the new Badcache ERC721.
@@ -81,11 +81,11 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
     require(_sender != address(0), "BadCacheBridge: can not mint a new token to the zero address");
 
     uint256 newTokenId = oldNewTokenIdPairs[_tokenId];
-    if (BadCache721I(badCache721).exists(newTokenId) && BadCache721I(badCache721).ownerOf(newTokenId) == address(this)) {
-      BadCache721I(badCache721).safeTransferFrom(address(this), _sender, newTokenId);
+    if (BadCacheI(badCache721).exists(newTokenId) && BadCacheI(badCache721).ownerOf(newTokenId) == address(this)) {
+      BadCacheI(badCache721).safeTransferFrom(address(this), _sender, newTokenId);
       return true;
     }
-    require(!BadCache721I(badCache721).exists(newTokenId), "BadCacheBridge: token already minted");
+    require(!BadCacheI(badCache721).exists(newTokenId), "BadCacheBridge: token already minted");
     require(newTokenId != 0, "BadCacheBridge: new token id does not exists");
 
     string memory uri = getURIById(newTokenId);
@@ -133,7 +133,7 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   function transferBadCache721(uint256 _tokenId, address _owner) public onlyOwner isNewTokenAllowed(_tokenId) {
     require(_owner != address(0), "BadCacheBridge: can not send a BadCache721 to the address zero");
 
-    BadCache721I(badCache721).safeTransferFrom(address(this), _owner, _tokenId);
+    BadCacheI(badCache721).safeTransferFrom(address(this), _owner, _tokenId);
   }
 
   /**
@@ -288,11 +288,11 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
     require(_owner != address(0), "BadCacheBridge: can not mint a new token to the zero address");
 
     //means we want to transfer an existing BadCache721
-    if (BadCache721I(badCache721).exists(_tokenId) && BadCache721I(badCache721).ownerOf(_tokenId) == address(this)) {
-      BadCache721I(badCache721).safeTransferFrom(address(this), _owner, _tokenId);
+    if (BadCacheI(badCache721).exists(_tokenId) && BadCacheI(badCache721).ownerOf(_tokenId) == address(this)) {
+      BadCacheI(badCache721).safeTransferFrom(address(this), _owner, _tokenId);
       return;
     }
-    require(!BadCache721I(badCache721).exists(_tokenId), "BadCacheBridge: token already minted");
+    require(!BadCacheI(badCache721).exists(_tokenId), "BadCacheBridge: token already minted");
     _mint721(_tokenId, _owner, _uri);
     custom721Ids.push(_tokenId);
     tokenURIs[_tokenId] = _uri;
@@ -303,7 +303,7 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
    */
   function transferOwnershipOf721(address _newOwner) public onlyOwner {
     require(_newOwner != address(0), "BadCacheBridge: new owner can not be the zero address");
-    BadCache721I(badCache721).transferOwnership(_newOwner);
+    BadCacheI(badCache721).transferOwnership(_newOwner);
   }
 
   /**
@@ -325,10 +325,10 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
     address _owner,
     string memory _tokenURI
   ) private {
-    BadCache721I(badCache721).mint(address(this), _tokenId);
+    BadCacheI(badCache721).mint(address(this), _tokenId);
 
-    BadCache721I(badCache721).setTokenUri(_tokenId, _tokenURI);
-    BadCache721I(badCache721).safeTransferFrom(address(this), _owner, _tokenId);
+    BadCacheI(badCache721).setTokenUri(_tokenId, _tokenURI);
+    BadCacheI(badCache721).safeTransferFrom(address(this), _owner, _tokenId);
     emit MintedBadCache721(_owner, _tokenId);
   }
 
