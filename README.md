@@ -15,3 +15,5 @@ ETHERSCAN_API used for etherscan publish, doesn't work yet...
 Do a npm install before running anything
 
 Make sure you are running npx hardhat test before doing anything
+
+Check the .env-example file (copy this file into a new .env file and complete the missing info)
