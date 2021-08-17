@@ -470,41 +470,55 @@ describe("BadCache Bridge Test", () => {
     ).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
-  //this doesn't work yet. reverse sending
-  xit("It can send BadCache721 and send back 1155", async () => {
-    expect(
-      await OpenSeaToken.connect(owner).safeTransferFrom(
-        owner.address,
-        Bridge.address,
-        "23206585376031660214193587638946525563951523460783169084504955424956229877761",
-        1,
-        []
-      )
-    )
-      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
-      .withArgs(owner.address, owner.address, "23206585376031660214193587638946525563951523460783169084504955424956229877761", 1)
-      .to.emit(OpenSeaToken, "TransferSingle")
-      .withArgs(
-        owner.address,
-        owner.address,
-        Bridge.address,
-        "23206585376031660214193587638946525563951523460783169084504955424956229877761",
-        1
-      );
+  //hardhat issue, this test needs to be solved
+  // it("It can send BadCache721 and send back 1155", async () => {
+  //   expect(
+  //     await OpenSeaToken.connect(owner).safeTransferFrom(
+  //       owner.address,
+  //       Bridge.address,
+  //       "23206585376031660214193587638946525563951523460783169084504955428254764761089",
+  //       1,
+  //       []
+  //     )
+  //   )
+  //     .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+  //     .withArgs(owner.address, owner.address, "23206585376031660214193587638946525563951523460783169084504955428254764761089", 1)
+  //     .to.emit(OpenSeaToken, "TransferSingle")
+  //     .withArgs(
+  //       owner.address,
+  //       owner.address,
+  //       Bridge.address,
+  //       "23206585376031660214193587638946525563951523460783169084504955428254764761089",
+  //       1
+  //     );
 
-    expect(await BadCache721.connect(owner).ownerOf(4)).to.equals(owner.address);
-    expect(await BadCache721.connect(owner).transferFrom(owner.address, Bridge.address, 4))
-      .to.emit(Bridge, "ReceivedTransferFromBadCache721")
-      .withArgs(owner.address, Bridge.address, 4);
-    expect(
-      await OpenSeaToken.connect(owner).balanceOf(
-        owner.address,
-        "23206585376031660214193587638946525563951523460783169084504955424956229877761"
-      )
-    ).to.equals(1);
-  });
+  //   expect(await BadCache721.connect(owner).ownerOf(7)).to.equals(owner.address);
+  //   console.log("Sender " + owner.address);
+  //   console.log("bridge " + Bridge.address);
+  //   expect(await BadCache721.connect(owner).safeTransferFrom(owner.address, Bridge.address, 7))
+  //     .to.emit(Bridge, "ReceivedTransferFromBadCache721")
+  //     .withArgs(owner.address, Bridge.address, 7);
+  //   expect(
+  //     await OpenSeaToken.connect(owner).balanceOf(
+  //       owner.address,
+  //       "23206585376031660214193587638946525563951523460783169084504955428254764761089"
+  //     )
+  //   ).to.equals(1);
+  // });
 
-  //These 2 tests needs to be at the final cause we transfer the ownership of BadCache721
+  // it("It test", async () => {
+  //   await BadCache721.connect(owner).mint(owner.address, 100);
+  //   console.log("Bridge " + Bridge.address);
+  //   console.log("Owner Of " + (await BadCache721.ownerOf(100)));
+  //   console.log("Owner " + owner.address);
+
+  //   await BadCache721.safeTransferFrom(owner.address, BadCacheHolder.address, 100);
+  //   // expect(await BadCache721.safeTransferFrom(owner.address, BadCacheHolder.address, 100))
+  //   //   .to.emit(BadCacheHolder, "ReceivedTransferFromBadCache721")
+  //   //   .withArgs(owner.address, BadCacheHolder.address, 100);
+  //   // expect(await BadCache721.connect(owner).ownerOf(100)).to.equals(BadCacheHolder.address);
+  // });
+
   it("It can transfer ownership of BadCache721", async () => {
     await Bridge.connect(owner).transferOwnershipOf721(walletTest3.address);
     expect(await BadCache721.connect(walletTest3).owner()).to.equals(walletTest3.address);
