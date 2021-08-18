@@ -243,6 +243,20 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
   }
 
   /**
+   * @dev get opensea proxied token
+   */
+  function getOpenSeaProxiedtoken() public view returns (address) {
+    return openseaToken;
+  }
+
+  /**
+   * @dev get BadCache721 proxied token
+   */
+  function getBadCache721Proxiedtoken() public view returns (address) {
+    return badCache721;
+  }
+
+  /**
    * @dev update params once we receive a transfer from 1155
    *
    * Requirements:
