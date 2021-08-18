@@ -19,7 +19,7 @@ task("accounts", "Prints the list of accounts", async (args, hre) => {
   }
 });
 
-const { DEPLOYER_PRIVATE_KEY, INFURA_RINKEBY, ALCHEMY_MAINNET_FORK, ETHERSCAN_API } = process.env;
+const { DEPLOYER_PRIVATE_KEY, INFURA_RINKEBY, INFURA_MAINNET, ALCHEMY_MAINNET_FORK, ETHERSCAN_API } = process.env;
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
@@ -37,7 +37,7 @@ export default {
     externalArtifacts: ["externalArtifacts/*.json"], // optional array of glob patterns with external artifacts to process (for example external libs from node_modules)
   },
   mocha: {
-    timeout: 30000
+    timeout: 30000,
   },
   namedAccounts: {
     deployer: 0,
@@ -53,6 +53,10 @@ export default {
     },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${INFURA_RINKEBY}`,
+      accounts: [`${DEPLOYER_PRIVATE_KEY}`],
+    },
+    mainnet: {
+      url: `https://rinkeby.infura.io/v3/${INFURA_MAINNET}`,
       accounts: [`${DEPLOYER_PRIVATE_KEY}`],
     },
   },
