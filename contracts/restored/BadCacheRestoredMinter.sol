@@ -8,7 +8,7 @@ import "../core/BadCacheI.sol";
 import "../core/restored/RestoredCacheI.sol";
 import "hardhat/console.sol";
 
-contract BadCacheV2Minter is Ownable, ReentrancyGuard {
+contract BadCacheRestoredMinter is Ownable, ReentrancyGuard {
   uint256[] private mintedIds;
   address[] private minters;
   address internal badCache721 = 0x0000000000000000000000000000000000000000;
@@ -20,9 +20,9 @@ contract BadCacheV2Minter is Ownable, ReentrancyGuard {
   }
 
   function mintBasedOnReceiving(address _sender, string memory uri) internal returns (bool) {
-    require(_sender != address(0), "BadCacheV2Minter: can not mint a new token to the zero address");
+    require(_sender != address(0), "BadCacheRestoredMinter: can not mint a new token to the zero address");
 
-    require(BadCacheI(badCache721).balanceOf(_sender) > 0, "BadCacheV2Minter: Sender does not have any BadCache721");
+    require(BadCacheI(badCache721).balanceOf(_sender) > 0, "BadCacheRestoredMinter: Sender does not have any BadCache721");
 
     uint256 maxId = BadCacheI(badCache721).getMaxId();
     for (uint256 i = 1; i <= maxId; i++) {
@@ -31,9 +31,6 @@ contract BadCacheV2Minter is Ownable, ReentrancyGuard {
         return true;
       }
     }
-
-    // string memory uri = getURIById(newTokenId);
-
     return true;
   }
 
