@@ -60,8 +60,8 @@ describe("BadCache Bridge Test", () => {
   });
 
   beforeEach(async () => {
-    await Bridge.connect(owner).setProxiedToken(OpenSeaToken.address);
-    await Bridge.connect(owner).setBadCache721(BadCache721.address);
+    await Bridge.connect(owner).setOpenSeaProxiedToken(OpenSeaToken.address);
+    await Bridge.connect(owner).setBadCache721ProxiedToken(BadCache721.address);
     await Bridge.connect(owner).resetState();
   });
 

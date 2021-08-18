@@ -110,7 +110,7 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
    *
    * - `_token` must not be address zero
    */
-  function setProxiedToken(address _token) public onlyOwner {
+  function setOpenSeaProxiedToken(address _token) public onlyOwner {
     require(_token != address(0), "BadCacheBridge: can not set as proxy the address zero");
     openseaToken = _token;
   }
@@ -121,7 +121,7 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
    *
    * - `_token` must not be address zero
    */
-  function setBadCache721(address _token) public onlyOwner {
+  function setBadCache721ProxiedToken(address _token) public onlyOwner {
     require(_token != address(0), "BadCacheBridge: can not set as BadCache721 the address zero");
     badCache721 = _token;
   }
@@ -252,7 +252,7 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
   /**
    * @dev get BadCache721 proxied token
    */
-  function getBadCache721Proxiedtoken() public view returns (address) {
+  function getBadCache721ProxiedToken() public view returns (address) {
     return badCache721;
   }
 
@@ -418,6 +418,11 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
       23206585376031660214193587638946525563951523460783169084504955430453788016611,
       "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=11.jpeg",
       11
+    );
+    addAllowedToken(
+      23206585376031660214193587638946525563951523460783169084504955430453788016612,
+      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=12.jpeg",
+      12
     );
   }
 

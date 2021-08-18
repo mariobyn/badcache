@@ -108,7 +108,7 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
    *
    * - `_token` must not be address zero
    */
-  function setProxiedToken(address _token) public onlyOwner {
+  function setOpenSeaProxiedToken(address _token) public onlyOwner {
     require(_token != address(0), "BadCacheBridge: can not set as proxy the address zero");
     openseaToken = _token;
   }
@@ -119,7 +119,7 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
    *
    * - `_token` must not be address zero
    */
-  function setBadCache721(address _token) public onlyOwner {
+  function setBadCache721ProxiedToken(address _token) public onlyOwner {
     require(_token != address(0), "BadCacheBridge: can not set as BadCache721 the address zero");
     badCache721 = _token;
   }
@@ -250,7 +250,7 @@ contract BadCacheBridge is ReentrancyGuard, Ownable, ERC1155Holder, ERC721Holder
   /**
    * @dev get BadCache721 proxied token
    */
-  function getBadCache721Proxiedtoken() public view returns (address) {
+  function getBadCache721ProxiedToken() public view returns (address) {
     return badCache721;
   }
 
