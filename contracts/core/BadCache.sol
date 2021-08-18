@@ -19,7 +19,7 @@ contract BadCache is ERC721URIStorage, Ownable {
     _safeMint(_owner, _tokenId);
   }
 
-  function exists(uint256 _tokenId) public view onlyOwner returns (bool) {
+  function exists(uint256 _tokenId) public view returns (bool) {
     return _exists(_tokenId);
   }
 
