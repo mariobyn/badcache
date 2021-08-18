@@ -56,7 +56,7 @@ export default {
       accounts: [`${DEPLOYER_PRIVATE_KEY}`],
     },
     mainnet: {
-      url: `https://rinkeby.infura.io/v3/${INFURA_MAINNET}`,
+      url: `https://mainnet.infura.io/v3/${INFURA_MAINNET}`,
       accounts: [`${DEPLOYER_PRIVATE_KEY}`],
     },
   },
