@@ -139,6 +139,18 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
   }
 
   /**
+   * @dev transfers a BadCache1155 Owned by the bridge to another owner
+   * Requirements:
+   *
+   * - `_token` must not be address zero
+   */
+  function transferBadCache1155(uint256 _tokenId, address _owner) public onlyOwner isNewTokenAllowed(_tokenId) {
+    require(_owner != address(0), "BadCacheBridge: can not send a BadCache1155 to the address zero");
+
+    OpenSeaIERC1155(openseaToken).safeTransferFrom(address(this), _owner, _tokenId, 1, "");
+  }
+
+  /**
    * @dev check owner of a token on OpenSea token
    */
   function ownerOf1155(uint256 _tokenId) public view returns (bool) {
