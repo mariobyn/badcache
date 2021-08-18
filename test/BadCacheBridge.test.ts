@@ -414,6 +414,30 @@ describe("BadCache Bridge Test", () => {
     expect(await BadCache721.connect(owner).ownerOf(9)).to.equals(owner.address);
   });
 
+  it("It verified max id for BadCache721", async () => {
+    expect(
+      await OpenSeaToken.connect(owner).safeTransferFrom(
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955430453788016611",
+        1,
+        []
+      )
+    )
+      .to.emit(Bridge, "ReceivedTransferFromOpenSea")
+      .withArgs(owner.address, owner.address, "23206585376031660214193587638946525563951523460783169084504955430453788016611", 1)
+      .to.emit(OpenSeaToken, "TransferSingle")
+      .withArgs(
+        owner.address,
+        owner.address,
+        Bridge.address,
+        "23206585376031660214193587638946525563951523460783169084504955430453788016611",
+        1
+      );
+
+    expect(await BadCache721.connect(owner).getMaxId()).to.equals(11);
+  });
+
   it("It can mint custom 721", async () => {
     expect(
       await Bridge.connect(owner).mintBadCache721(

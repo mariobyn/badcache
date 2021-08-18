@@ -7,18 +7,18 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const { deployer } = await getNamedAccounts();
 
-  await deploy("BadCacheBridgeRinkeby", {
-    from: deployer,
-    args: [],
-    log: true,
-  });
-
-  // await deploy("BadCache", {
+  // await deploy("BadCacheBridgeRinkeby", {
   //   from: deployer,
-  //   args: ["BadCache", "BadCache"],
+  //   args: [],
   //   log: true,
   // });
+
+  await deploy("BadCache", {
+    from: deployer,
+    args: ["BadCache2", "BadCache2"],
+    log: true,
+  });
 };
 export default func;
-func.tags = ["BadCacheBridgeRinkeby"];
-// func.tags = ["BadCache"];
+// func.tags = ["BadCacheBridgeRinkeby"];
+func.tags = ["BadCache"];
