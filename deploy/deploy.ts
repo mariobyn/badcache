@@ -15,7 +15,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   await deploy("BadCache", {
     from: deployer,
-    args: ["BadCache2", "BadCache2"],
+    args: ["BadCache", "BadCache"],
     log: true,
   });
 };
