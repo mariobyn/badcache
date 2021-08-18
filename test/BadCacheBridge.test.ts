@@ -1,7 +1,6 @@
 import hre, { ethers, network } from "hardhat";
 import { BigNumber, Signer, Wallet } from "ethers";
 import { expect } from "chai";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
   BadCacheBridgeTest__factory,
