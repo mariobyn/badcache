@@ -19,17 +19,18 @@ contract BadCacheRestoredMinter is Ownable, ReentrancyGuard {
     console.logUint(msg.value);
   }
 
-  function mintBasedOnReceiving(address _sender, string memory uri) internal returns (bool) {
+  function mintBasedOnReceiving(
+    address _sender,
+    string memory uri,
+    uint256 _badCache721Id
+  ) internal returns (bool) {
     require(_sender != address(0), "BadCacheRestoredMinter: can not mint a new token to the zero address");
 
     require(BadCacheI(badCache721).balanceOf(_sender) > 0, "BadCacheRestoredMinter: Sender does not have any BadCache721");
 
-    uint256 maxId = BadCacheI(badCache721).getMaxId();
-    for (uint256 i = 1; i <= maxId; i++) {
-      if (BadCacheI(badCache721).ownerOf(i) == _sender) {
-        _mint721(i, _sender, uri);
-        return true;
-      }
+    if (BadCacheI(badCache721).ownerOf(_badCache721Id) == _sender) {
+      _mint721(_badCache721Id, _sender, uri);
+      return true;
     }
     return false;
   }
