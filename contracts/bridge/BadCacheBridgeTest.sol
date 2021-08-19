@@ -19,7 +19,7 @@ contract BadCacheBridgeTest is BadCacheBridgeRinkeby {
   }
 
   function resetState() public onlyOwner {
-    for (uint128 i = 0; i < totalTransfers; i++) {
+    for (uint32 i = 0; i < totalTransfers; i++) {
       delete transfers[i][senders[i]];
     }
     delete senders;

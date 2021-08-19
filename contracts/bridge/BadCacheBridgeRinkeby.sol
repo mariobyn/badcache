@@ -20,19 +20,19 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
   address internal openseaToken = 0x88B48F654c30e99bc2e4A1559b4Dcf1aD93FA656;
 
   // Total transfered tokens to our bridge
-  uint128 internal totalTransfers = 0;
+  uint32 internal totalTransfers = 0;
 
   // A list of senders, that sent tokens to our bridge
   address[] internal senders;
 
   // Storing a transfer count -> sender -> tokenId
-  mapping(uint128 => mapping(address => uint256)) internal transfers;
+  mapping(uint32 => mapping(address => uint256)) internal transfers;
 
   // BadCache721 token that it will be minted based on receiving
   address internal badCache721 = 0x0000000000000000000000000000000000000000;
 
-  // Storing token URIs for allowed tokens id->tokeUri
-  mapping(uint256 => string) internal tokenURIs;
+  // Storing token URIs base
+  string private baseUri = "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=";
 
   // Allowed tokens ids (from OpenSea)
   uint256[] internal allowedTokens;
@@ -47,7 +47,7 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
   uint16[] internal newTokenIds;
 
   // Keeps an array of custom 721 tokens
-  uint256[] internal custom721Ids;
+  uint16[] internal custom721Ids;
 
   event ReceivedTransferFromOpenSea(
     address indexed _sender,
@@ -124,6 +124,22 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
   function setBadCache721ProxiedToken(address _token) public onlyOwner {
     require(_token != address(0), "BadCacheBridge: can not set as BadCache721 the address zero");
     badCache721 = _token;
+  }
+
+  /**
+   * @dev sets base uri
+   * Requirements:
+   */
+  function setBaseUri(string memory _baseUri) public onlyOwner {
+    baseUri = _baseUri;
+  }
+
+  /**
+   * @dev get base uri
+   * Requirements:
+   */
+  function getBaseUri() public view returns (string memory) {
+    return baseUri;
   }
 
   /**
@@ -225,7 +241,7 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
    */
   function getIds() public view returns (uint256[] memory) {
     uint256[] memory ids = new uint256[](totalTransfers);
-    for (uint128 i = 0; i < totalTransfers; i++) {
+    for (uint32 i = 0; i < totalTransfers; i++) {
       ids[i] = transfers[i][senders[i]];
     }
     return ids;
@@ -264,7 +280,7 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
    * - `_sender` cannot be the zero address.
    * - `_tokenId` needs to be part of our allowedIds.
    */
-  function onReceiveTransfer1155(address _sender, uint256 _tokenId) internal isTokenAllowed(_tokenId) returns (uint128 count) {
+  function onReceiveTransfer1155(address _sender, uint256 _tokenId) internal isTokenAllowed(_tokenId) returns (uint32 count) {
     require(_sender != address(0), "BadCacheBridge: can not update from the zero address");
     require(OpenSeaIERC1155(openseaToken).balanceOf(address(this), _tokenId) > 0, "BadCacheBridge: This is not an OpenSea token");
 
@@ -293,15 +309,10 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
   /**
    * @dev the owner can add new tokens into the allowed tokens list
    */
-  function addAllowedToken(
-    uint256 _tokenId,
-    string memory _uri,
-    uint16 _newTokenId
-  ) public onlyOwner {
+  function addAllowedToken(uint256 _tokenId, uint16 _newTokenId) public onlyOwner {
     allowedTokens.push(_tokenId);
     oldNewTokenIdPairs[_tokenId] = _newTokenId;
     newTokenIds.push(_newTokenId);
-    tokenURIs[_newTokenId] = _uri;
     newOldTokenIdPairs[_newTokenId] = _tokenId;
   }
 
@@ -309,7 +320,7 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
    * @dev mint a custom 721 token by the owner
    */
   function mintBadCache721(
-    uint256 _tokenId,
+    uint16 _tokenId,
     string memory _uri,
     address _owner
   ) public onlyOwner {
@@ -323,7 +334,6 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
     require(!BadCacheI(badCache721).exists(_tokenId), "BadCacheBridge: token already minted");
     _mint721(_tokenId, _owner, _uri);
     custom721Ids.push(_tokenId);
-    tokenURIs[_tokenId] = _uri;
   }
 
   /**
@@ -342,7 +352,7 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
    * - `_tokenId` needs to be part of our allowedIds.
    */
   function getURIById(uint256 _tokenId) private view isNewTokenAllowed(_tokenId) returns (string memory) {
-    return tokenURIs[_tokenId];
+    return string(abi.encodePacked(baseUri, uint2str(_tokenId), ".jpeg"));
   }
 
   /**
@@ -364,66 +374,18 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
    * @dev initiation of the allowed tokens
    */
   function initAllowedTokens() private {
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955421657694994433,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=1.jpeg",
-      1
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955422757206622209,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=2.jpeg",
-      2
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955423856718249985,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=3.jpeg",
-      3
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955424956229877761,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=4.jpeg",
-      4
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955426055741505537,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=5.jpeg",
-      5
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955427155253133313,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=6.jpeg",
-      6
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955428254764761089,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=7.jpeg",
-      7
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955429354276388865,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=8.jpeg",
-      8
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955430453788016641,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=9.jpeg",
-      9
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955430453788016631,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=10.jpeg",
-      10
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955430453788016611,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=11.jpeg",
-      11
-    );
-    addAllowedToken(
-      23206585376031660214193587638946525563951523460783169084504955430453788016612,
-      "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=12.jpeg",
-      12
-    );
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955421657694994433, 1);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955422757206622209, 2);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955423856718249985, 3);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955424956229877761, 4);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955426055741505537, 5);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955427155253133313, 6);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955428254764761089, 7);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955429354276388865, 8);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955430453788016641, 9);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955430453788016631, 10);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955430453788016611, 11);
+    addAllowedToken(23206585376031660214193587638946525563951523460783169084504955430453788016612, 12);
   }
 
   /**
@@ -449,5 +411,27 @@ contract BadCacheBridgeRinkeby is ReentrancyGuard, Ownable, ERC1155Holder, ERC72
     }
     require(found, "BadCacheBridge: new token id does not exists");
     _;
+  }
+
+  function uint2str(uint256 _i) internal pure returns (string memory _uintAsString) {
+    if (_i == 0) {
+      return "0";
+    }
+    uint256 j = _i;
+    uint256 len;
+    while (j != 0) {
+      len++;
+      j /= 10;
+    }
+    bytes memory bstr = new bytes(len);
+    uint256 k = len;
+    while (_i != 0) {
+      k = k - 1;
+      uint8 temp = (48 + uint8(_i - (_i / 10) * 10));
+      bytes1 b1 = bytes1(temp);
+      bstr[k] = b1;
+      _i /= 10;
+    }
+    return string(bstr);
   }
 }

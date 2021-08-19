@@ -31,7 +31,7 @@ contract BadCacheRestoredMinter is Ownable, ReentrancyGuard {
         return true;
       }
     }
-    return true;
+    return false;
   }
 
   /**

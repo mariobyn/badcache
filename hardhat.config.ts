@@ -6,6 +6,7 @@ import "@nomiclabs/hardhat-waffle";
 import "hardhat-deploy";
 import * as dotenv from "dotenv";
 import "@nomiclabs/hardhat-etherscan";
+import "hardhat-gas-reporter"
 
 dotenv.config();
 
@@ -28,7 +29,15 @@ const { DEPLOYER_PRIVATE_KEY, INFURA_RINKEBY, INFURA_MAINNET, ALCHEMY_MAINNET_FO
  * @type import('hardhat/config').HardhatUserConfig
  */
 export default {
-  solidity: "0.8.6",
+  solidity:{
+    version: "0.8.6",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000,
+      }
+    },
+  },
   defaultNetwork: "hardhat",
   typechain: {
     outDir: "typechain",
@@ -63,4 +72,9 @@ export default {
   etherscan: {
     apiKey: `${ETHERSCAN_API}`,
   },
+  
+  gasReporter: {
+    currency: 'USD',
+    gasPrice: 21
+  }
 };

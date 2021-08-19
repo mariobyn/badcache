@@ -441,32 +441,32 @@ describe("BadCache Bridge Test", () => {
   it("It can mint custom 721", async () => {
     expect(
       await Bridge.connect(owner).mintBadCache721(
-        100000,
+        10000,
         "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=CUSTOM.jpeg",
         walletTest3.address
       )
     )
       .to.emit(Bridge, "MintedBadCache721")
-      .withArgs(walletTest3.address, 100000);
+      .withArgs(walletTest3.address, 10000);
 
-    let arr = [BigNumber.from(100000)];
+    let arr = [BigNumber.from(10000)];
     expect(await Bridge.getCustomIds()).to.eql(arr);
   });
 
   it("It can not mint custom 721 that was already minted", async () => {
     expect(
       await Bridge.connect(owner).mintBadCache721(
-        100001,
+        10002,
         "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=CUSTOM.jpeg",
         walletTest3.address
       )
     )
       .to.emit(Bridge, "MintedBadCache721")
-      .withArgs(walletTest3.address, 100001);
+      .withArgs(walletTest3.address, 10002);
 
     await expect(
       Bridge.connect(owner).mintBadCache721(
-        100001,
+        10002,
         "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=CUSTOM.jpeg",
         walletTest3.address
       )
@@ -476,7 +476,7 @@ describe("BadCache Bridge Test", () => {
   it("It can not mint custom 721 by not the bridge owner", async () => {
     await expect(
       Bridge.connect(walletTest3).mintBadCache721(
-        100001,
+        10001,
         "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=CUSTOM.jpeg",
         walletTest3.address
       )
@@ -487,7 +487,6 @@ describe("BadCache Bridge Test", () => {
     await expect(
       Bridge.connect(walletTest3).addAllowedToken(
         100000,
-        "https://ipfs.io/ipfs/QmSgfaQ7sK8SguU4u1wTQrUzeoJ8KptAW2KgVmi6AZomBj?filename=CUSTOM.jpeg",
         100
       )
     ).to.be.revertedWith("Ownable: caller is not the owner");
