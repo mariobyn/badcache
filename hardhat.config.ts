@@ -57,8 +57,8 @@ export default {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_MAINNET_FORK}`,
       },
-      gas: 2100000,
-      gasPrice: 8000000000,
+      gas: 8000000,
+      gasPrice: 210000,
     },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${INFURA_RINKEBY}`,
