@@ -7,6 +7,7 @@ import "hardhat-deploy";
 import * as dotenv from "dotenv";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-gas-reporter"
+import "chai-as-promised"
 
 dotenv.config();
 
@@ -75,6 +76,6 @@ export default {
   
   gasReporter: {
     currency: 'USD',
-    gasPrice: 21
+    gasPrice: 210000
   }
 };

@@ -11,7 +11,7 @@ import {
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
-describe("BadCache Bridge Test", () => {
+xdescribe("BadCache Bridge Test", () => {
   let Bridge: any;
   let BridgeFactory: any;
 
