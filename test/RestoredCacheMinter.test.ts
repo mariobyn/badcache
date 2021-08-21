@@ -189,7 +189,5 @@ describe("ReversedCache Test", () => {
 
     expect(await RestoredCacheMinter.getBalance()).to.equals(balance.sub(ethers.utils.parseEther("0.3")));
     let prov = ethers.getDefaultProvider();
-    console.log("" + (await prov.getBalance(owner.address)));
-    console.log("" + (await prov.getBalance(RestoredCacheMinter.address)));
   });
 });
