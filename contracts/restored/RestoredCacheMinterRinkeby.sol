@@ -75,10 +75,7 @@ contract RestoredCacheMinterRinkeby is Ownable, ReentrancyGuard, ERC721Holder {
     address _owner,
     string memory _tokenURI
   ) private {
-    RestoredCacheI(restoredCache).mint(address(this), _tokenId);
-
-    RestoredCacheI(restoredCache).setTokenUri(_tokenId, _tokenURI);
-    RestoredCacheI(restoredCache).safeTransferFrom(address(this), _owner, _tokenId);
+    RestoredCacheI(restoredCache).mint(_owner, _tokenId, _tokenURI);
     emit MintedRestoredCache(_owner, _tokenId);
   }
 
@@ -176,7 +173,7 @@ contract RestoredCacheMinterRinkeby is Ownable, ReentrancyGuard, ERC721Holder {
   /**
    * @dev gets paused
    */
-  function getPuased() public view returns (bool) {
+  function getPaused() public view returns (bool) {
     return paused;
   }
 

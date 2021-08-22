@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 abstract contract RestoredCacheI is IERC721, Ownable {
   function setTokenUri(uint256 _tokenId, string memory _tokenURI) public virtual;
 
-  function mint(address _owner, uint256 _tokenId) public virtual;
+  function mint(address _owner, uint256 _tokenId, string memory _tokenURI) public virtual;
 
   function exists(uint256 _tokenId) public view virtual returns (bool);
 }

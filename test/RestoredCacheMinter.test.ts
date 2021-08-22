@@ -1,10 +1,9 @@
-import hre, { ethers, network } from "hardhat";
-import { BigNumber, Signer, Wallet } from "ethers";
+import { ethers } from "hardhat";
+import { BigNumber } from "ethers";
 import { expect } from "chai";
 
 import { BadCache__factory, RestoredCacheMinterRinkeby__factory, RestoredCache__factory } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { exec } from "child_process";
 
 describe("ReversedCache Test", () => {
   let BadCache721: any;
@@ -18,12 +17,15 @@ describe("ReversedCache Test", () => {
 
   let owner: SignerWithAddress;
 
+  let provider: any;
+
   let wallet: any;
 
   before(async () => {
     [owner, wallet] = await ethers.getSigners();
+    provider = await ethers.provider;
 
-    BadCache721Factory = (await ethers.getContractFactory("BadCache", owner)) as BadCache__factory;
+    BadCache721Factory = (await ethers.getContractFactory("BadCache", wallet)) as BadCache__factory;
     BadCache721 = await (await BadCache721Factory).deploy("BadCache", "BadCache");
 
     RestoredCacheFactory = (await ethers.getContractFactory("RestoredCache", owner)) as RestoredCache__factory;
@@ -79,11 +81,11 @@ describe("ReversedCache Test", () => {
     );
   });
 
-  it("It can purchase a RestorecCache as BadCache 721 Holder", async () => {
+  it("It can purchase a RestoredCache as BadCache 721 Holder", async () => {
     await RestoredCacheMinter.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
     expect(await RestoredCacheMinter.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
 
-    await BadCache721.connect(owner).mint(owner.address, 1);
+    await BadCache721.connect(wallet).mint(owner.address, 1);
     expect(await BadCache721.ownerOf(1)).to.equals(owner.address);
 
     expect(
@@ -98,7 +100,7 @@ describe("ReversedCache Test", () => {
     expect(await RestoredCache.ownerOf(1)).to.equals(owner.address);
   });
 
-  it("It can not purchase a RestorecCache due to not being a BadCache holder and pause = true", async () => {
+  it("It can not purchase a RestoredCache due to not being a BadCache holder and pause = true", async () => {
     await RestoredCacheMinter.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
     expect(await RestoredCacheMinter.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
 
@@ -110,11 +112,11 @@ describe("ReversedCache Test", () => {
     ).to.be.revertedWith("RestoredCacheMinter: BadCache 721 does not exists");
   });
 
-  it("Checks the uri of a newly bought RestorecCache as BadCache 721 Holder", async () => {
+  it("Checks the uri of a newly bought RestoredCache as BadCache 721 Holder", async () => {
     await RestoredCacheMinter.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
     expect(await RestoredCacheMinter.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
 
-    await BadCache721.connect(owner).mint(owner.address, 3);
+    await BadCache721.connect(wallet).mint(owner.address, 3);
     expect(await BadCache721.ownerOf(3)).to.equals(owner.address);
 
     expect(
@@ -130,11 +132,11 @@ describe("ReversedCache Test", () => {
     expect(await RestoredCache.tokenURI(3)).to.equals("https://facebook.com");
   });
 
-  it("It can not purchase a RestorecCache due to not being the owner of a BadCache", async () => {
+  it("It can not purchase a RestoredCache due to not being the owner of a BadCache and pause = true", async () => {
     await RestoredCacheMinter.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
     expect(await RestoredCacheMinter.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
 
-    await BadCache721.connect(owner).mint(wallet.address, 4);
+    await BadCache721.connect(wallet).mint(wallet.address, 4);
     expect(await BadCache721.ownerOf(4)).to.equals(wallet.address);
 
     await expect(
@@ -151,7 +153,7 @@ describe("ReversedCache Test", () => {
     await expect(RestoredCacheMinter.connect(owner).setPaused(true)).to.not.be.reverted;
   });
 
-  it("It can purchase a RestoreCache even if it is not a holder of BadCache 721 because pause=false", async () => {
+  it("It can purchase a RestoreCache even if it is not a holder of BadCache 721 because pause = false", async () => {
     await RestoredCacheMinter.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
     expect(await RestoredCacheMinter.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
 
@@ -169,8 +171,8 @@ describe("ReversedCache Test", () => {
     await expect(RestoredCacheMinter.connect(owner).setPaused(true)).to.not.be.reverted;
   });
 
-  it("Only owner can withdraw", async () => {
-    await BadCache721.connect(owner).mint(owner.address, 6);
+  it("Owner can withdraw", async () => {
+    await BadCache721.connect(wallet).mint(owner.address, 6);
     expect(await BadCache721.ownerOf(6)).to.equals(owner.address);
     expect(
       await RestoredCacheMinter.purchase(6, 1, "https://google.com", {
@@ -188,6 +190,24 @@ describe("ReversedCache Test", () => {
       .withArgs(owner.address, ethers.utils.parseEther("0.3"));
 
     expect(await RestoredCacheMinter.getBalance()).to.equals(balance.sub(ethers.utils.parseEther("0.3")));
-    let prov = ethers.getDefaultProvider();
+  });
+
+  it("A Non-Owner can not withdraw", async () => {
+    await BadCache721.connect(wallet).mint(owner.address, 7);
+    expect(await BadCache721.ownerOf(7)).to.equals(owner.address);
+    expect(
+      await RestoredCacheMinter.purchase(7, 1, "https://google.com", {
+        from: owner.address,
+        value: ethers.utils.parseEther("0.3"),
+      })
+    )
+      .to.emit(RestoredCacheMinter, "MintedRestoredCache")
+      .withArgs(owner.address, 7);
+
+    let balance: BigNumber = await RestoredCacheMinter.getBalance();
+
+    await expect(RestoredCacheMinter.connect(wallet).withdraw(ethers.utils.parseEther("0.3"))).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
   });
 });

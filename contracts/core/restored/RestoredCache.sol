@@ -11,8 +11,13 @@ contract RestoredCache is ERC721URIStorage, Ownable {
     _setTokenURI(_tokenId, _tokenURI);
   }
 
-  function mint(address _owner, uint256 _tokenId) public onlyOwner {
+  function mint(
+    address _owner,
+    uint256 _tokenId,
+    string memory _tokenURI
+  ) public onlyOwner {
     _safeMint(_owner, _tokenId);
+    _setTokenURI(_tokenId, _tokenURI);
   }
 
   function exists(uint256 _tokenId) public view returns (bool) {
