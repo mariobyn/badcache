@@ -7,11 +7,13 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 contract RestoredCache is ERC721URIStorage, Ownable {
-  address internal badCache721 = 0x0000000000000000000000000000000000000000;
-  bool internal paused = true;
-  uint256 internal balance = 0;
+  address private badCache721 = 0x0000000000000000000000000000000000000000;
+  bool private paused = true;
+  uint256 private balance = 0;
+  string private baseURI;
+  address private bank = 0x85E4a49ba19731cD036825ee18cdbc9982DC50eF;
 
-  mapping(uint8 => uint256) internal amountPerType;
+  mapping(uint8 => uint256) private amountPerType;
   event MintedRestoredCache(address indexed _sender, uint256 indexed _tokenId);
   event Witdraw(address indexed _receiver, uint256 indexed _amount);
 
@@ -29,15 +31,12 @@ contract RestoredCache is ERC721URIStorage, Ownable {
    * - `_type` - defines a type of metadata type (video or image) and must exists in allowed types.
    *             Also the amount of ETH sent must be equal with the amount of ETH required for this type
    */
-  function purchase(
-    uint256 _tokenId,
-    uint8 _type,
-    string memory uri
-  ) public payable {
+  function purchase(uint256 _tokenId, uint8 _type) public payable {
     require(amountPerType[_type] > 0, "Type of metadata not found");
     require(amountPerType[_type] == msg.value, "Amount of ETH <> Meta type");
-    balance = balance + msg.value;
-    mintRestoredCache(msg.sender, uri, _tokenId);
+    (bool succeed, ) = bank.call{ value: msg.value }("");
+    require(succeed, "Purchase not succeeded");
+    mintRestoredCache(msg.sender, _tokenId);
   }
 
   /**
@@ -48,11 +47,7 @@ contract RestoredCache is ERC721URIStorage, Ownable {
    * - `_sender` - to be the owner of _badCache721Id on BadCache721
    *
    */
-  function mintRestoredCache(
-    address _sender,
-    string memory uri,
-    uint256 _tokenId
-  ) internal {
+  function mintRestoredCache(address _sender, uint256 _tokenId) internal {
     require(_sender != address(0), "Can not mint to address 0");
     require(!this.exists(_tokenId), "Token already exists");
 
@@ -69,19 +64,15 @@ contract RestoredCache is ERC721URIStorage, Ownable {
 
       validPurchase = true;
     }
-    if (validPurchase) _mint721(_tokenId, _sender, uri);
+    if (validPurchase) _mint721(_tokenId, _sender);
   }
 
   /**
    * @dev minting RestoredCache function and transfer to the owner
    */
-  function _mint721(
-    uint256 _tokenId,
-    address _owner,
-    string memory _tokenURI
-  ) private {
+  function _mint721(uint256 _tokenId, address _owner) private {
     _safeMint(_owner, _tokenId);
-    _setTokenURI(_tokenId, _tokenURI);
+    _setTokenURI(_tokenId, tokenURI(_tokenId));
     emit MintedRestoredCache(_owner, _tokenId);
   }
 
@@ -118,10 +109,17 @@ contract RestoredCache is ERC721URIStorage, Ownable {
   }
 
   /**
-   * @dev gets the balance of ETH of the contract
+   * @dev set Bank address
    */
-  function getBalance() public view returns (uint256) {
-    return balance;
+  function setBank(address _bank) public onlyOwner {
+    bank = _bank;
+  }
+
+  /**
+   * @dev get Bank address
+   */
+  function getBank() public view returns (address) {
+    return bank;
   }
 
   /**
@@ -139,13 +137,30 @@ contract RestoredCache is ERC721URIStorage, Ownable {
   }
 
   /**
-   * @dev withdraws contract balance
+   * @dev gets base token uri
    */
-  function withdraw(uint256 _amount) public onlyOwner {
-    require(balance >= _amount, "Can not withdraw this amount");
-    balance = balance - _amount;
-    (bool succeed, ) = msg.sender.call{ value: _amount }("");
-    require(succeed, "Could not withdraw");
-    emit Witdraw(msg.sender, _amount);
+  function baseTokenURI() internal view returns (string memory) {
+    return baseURI;
+  }
+
+  /**
+   * @dev owner can change base token uri
+   */
+  function changeBaseTokenURI(string memory _uri) public onlyOwner {
+    baseURI = _uri;
+  }
+
+  /**
+   * @dev appends 2 strings
+   */
+  function append(string memory a, string memory b) internal pure returns (string memory) {
+    return string(abi.encodePacked(a, b));
+  }
+
+  /**
+   * @dev returns full token uri based on _tokenId
+   */
+  function tokenURI(uint256 _tokenId) public view override returns (string memory) {
+    return append(baseTokenURI(), Strings.toString(_tokenId));
   }
 }
