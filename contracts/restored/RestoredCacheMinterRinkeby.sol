@@ -32,8 +32,8 @@ contract RestoredCacheMinterRinkeby is Ownable, ReentrancyGuard, ERC721Holder {
     uint8 _type,
     string memory uri
   ) public payable {
-    require(amountPerType[_type] > 0, "RestoredCacheMinter: Type of metadata not found");
-    require(amountPerType[_type] == msg.value, "RestoredCacheMinter: The amount of ETH for this metadata type is wrong");
+    require(amountPerType[_type] > 0, "Type of metadata not found");
+    require(amountPerType[_type] == msg.value, "Amount of ETH <> Meta type");
     balance = balance + msg.value;
     mintRestoredCache(msg.sender, uri, _tokenId);
   }
@@ -51,16 +51,19 @@ contract RestoredCacheMinterRinkeby is Ownable, ReentrancyGuard, ERC721Holder {
     string memory uri,
     uint256 _tokenId
   ) internal {
-    require(_sender != address(0), "RestoredCacheMinter: can not mint a new token to the zero address");
-    require(!RestoredCacheI(restoredCache).exists(_tokenId), "RestoredCacheMinter: Token already exists");
+    require(_sender != address(0), "Can not mint to address 0");
+    require(!RestoredCacheI(restoredCache).exists(_tokenId), "Token already exists");
 
     bool validPurchase = !paused;
 
     //if paused == true, means only BadCache 721 holders can mint
     if (paused) {
-      require(BadCacheI(badCache721).balanceOf(_sender) > 0, "RestoredCacheMinter: Sender does not have any BadCache721");
-      require(BadCacheI(badCache721).exists(_tokenId), "RestoredCacheMinter: BadCache 721 does not exists");
-      require(BadCacheI(badCache721).ownerOf(_tokenId) == _sender, "RestoredCacheMinter: You are not the owner of BadCache721");
+      require(
+        BadCacheI(badCache721).balanceOf(_sender) > 0 &&
+          BadCacheI(badCache721).exists(_tokenId) &&
+          BadCacheI(badCache721).ownerOf(_tokenId) == _sender,
+        "Sender has problems with BadCache721"
+      );
 
       validPurchase = true;
     }
@@ -94,7 +97,6 @@ contract RestoredCacheMinterRinkeby is Ownable, ReentrancyGuard, ERC721Holder {
     uint256 _tokenId,
     bytes memory _data
   ) public override returns (bytes4) {
-    require(_sender != address(0), "BadCacheBridge: can not update from the zero address");
     return super.onERC721Received(_sender, _receiver, _tokenId, _data);
   }
 
@@ -102,7 +104,7 @@ contract RestoredCacheMinterRinkeby is Ownable, ReentrancyGuard, ERC721Holder {
    * @dev transfers the ownership of RestoredCache token from Bridge to _newOwner
    */
   function transferOwnershipOfRestored(address _newOwner) public onlyOwner {
-    require(_newOwner != address(0), "RestoredCacheMinter: new owner can not be the zero address");
+    require(_newOwner != address(0), "New owner can not be address 0");
     RestoredCacheI(restoredCache).transferOwnership(_newOwner);
   }
 
@@ -113,7 +115,7 @@ contract RestoredCacheMinterRinkeby is Ownable, ReentrancyGuard, ERC721Holder {
    * - `_token` must not be address zero
    */
   function setBadCache721ProxiedAddress(address _token) public onlyOwner {
-    require(_token != address(0), "BadCacheBridge: can not set as BadCache721 the address zero");
+    require(_token != address(0), "Can't set to the address 0");
     badCache721 = _token;
   }
 
@@ -131,7 +133,7 @@ contract RestoredCacheMinterRinkeby is Ownable, ReentrancyGuard, ERC721Holder {
    * - `_token` must not be address zero
    */
   function setRestoredCacheProxiedAddress(address _token) public onlyOwner {
-    require(_token != address(0), "BadCacheBridge: can not set as RestoredCache the address zero");
+    require(_token != address(0), "Can't set to the address 0");
     restoredCache = _token;
   }
 
@@ -181,10 +183,10 @@ contract RestoredCacheMinterRinkeby is Ownable, ReentrancyGuard, ERC721Holder {
    * @dev withdraws contract balance
    */
   function withdraw(uint256 _amount) public onlyOwner {
-    require(balance >= _amount, "BadCacheBridge: can not withdraw this amount");
-    (bool succeed, ) = msg.sender.call{ value: _amount }("");
-    require(succeed, "BadCacheBridge: Could not withdraw");
+    require(balance >= _amount, "Can not withdraw this amount");
     balance = balance - _amount;
+    (bool succeed, ) = msg.sender.call{ value: _amount }("");
+    require(succeed, "Could not withdraw");
     emit Witdraw(msg.sender, _amount);
   }
 }

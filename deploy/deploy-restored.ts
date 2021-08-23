@@ -7,11 +7,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const { deployer } = await getNamedAccounts();
 
-  // await deploy("RestoredCacheMinterRinkeby", {
-  //   from: deployer,
-  //   args: [],
-  //   log: true,
-  // });
+  await deploy("RestoredCache", {
+    from: deployer,
+    args: [],
+    log: true,
+  });
 
   // await deploy("RestoredCache", {
   //   from: deployer,
@@ -20,5 +20,5 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // });
 };
 export default func;
-// func.tags = ["RestoredCacheMinterRinkeby"];
+func.tags = ["RestoredCache"];
 // func.tags = ["RestoredCache"];
