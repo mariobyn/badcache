@@ -17,7 +17,19 @@ contract RestoredCache is ERC721URIStorage, Ownable {
   event MintedRestoredCache(address indexed _sender, uint256 indexed _tokenId);
   event Witdraw(address indexed _receiver, uint256 indexed _amount);
 
-  constructor() onlyOwner ERC721("RestoredCache", "RestoredCache") {}
+  constructor() onlyOwner ERC721("RestoredCache", "RestoredCache") {
+    amountPerType[0] = 300000000000000000;
+    amountPerType[1] = 100000000000000000;
+    amountPerType[2] = 100000000000000000;
+    amountPerType[3] = 100000000000000000;
+    amountPerType[4] = 100000000000000000;
+    amountPerType[5] = 100000000000000000;
+    amountPerType[6] = 100000000000000000;
+    amountPerType[7] = 100000000000000000;
+    amountPerType[8] = 100000000000000000;
+    amountPerType[9] = 100000000000000000;
+    amountPerType[10] = 100000000000000000;
+  }
 
   function exists(uint256 _tokenId) public view returns (bool) {
     return _exists(_tokenId);
@@ -92,20 +104,6 @@ contract RestoredCache is ERC721URIStorage, Ownable {
    */
   function getBadCache721ProxiedAddress() public view returns (address) {
     return badCache721;
-  }
-
-  /**
-   * @dev sets amount of ETH that a metadata type requires in order to purchase
-   */
-  function setAmountPerType(uint8 _type, uint256 _amount) public onlyOwner {
-    amountPerType[_type] = _amount;
-  }
-
-  /**
-   * @dev gets an amount of ETH per metadata type
-   */
-  function getAmountPerType(uint8 _type) public view returns (uint256) {
-    return amountPerType[_type];
   }
 
   /**

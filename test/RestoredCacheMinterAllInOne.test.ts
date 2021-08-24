@@ -41,40 +41,14 @@ describe("ReversedCache All in one Test", () => {
     );
   });
 
-  it("It can set amount of ETH per metadata type", async () => {
-    await RestoredCache.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
-    expect(await RestoredCache.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
-  });
-
-  it("It can not set amount of ETH per metadata type for a negative type", async () => {
-    await expect(RestoredCache.connect(owner).setAmountPerType(257, ethers.utils.parseEther("0.3"))).to.be.reverted;
-  });
-
-  it("It can replace an amount of ETH of an already set metadata type", async () => {
-    await RestoredCache.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
-    expect(await RestoredCache.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
-
-    await RestoredCache.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.4"));
-    expect(await RestoredCache.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.4"));
-  });
-
-  it("Only Owner can set amount per type", async () => {
-    await expect(RestoredCache.connect(wallet).setAmountPerType(1, ethers.utils.parseEther("0.3"))).to.be.revertedWith(
-      "Ownable: caller is not the owner"
-    );
-  });
-
   it("It can purchase a RestoredCache as BadCache 721 Holder", async () => {
-    await RestoredCache.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
-    expect(await RestoredCache.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
-
     await BadCache721.connect(wallet).mint(owner.address, 1);
     expect(await BadCache721.ownerOf(1)).to.equals(owner.address);
 
     expect(
       await RestoredCache.purchase(1, 1, {
         from: owner.address,
-        value: ethers.utils.parseEther("0.3"),
+        value: ethers.utils.parseEther("0.1"),
       })
     )
       .to.emit(RestoredCache, "MintedRestoredCache")
@@ -82,20 +56,15 @@ describe("ReversedCache All in one Test", () => {
   });
 
   it("It can not purchase a RestoredCache due to not being a BadCache holder and pause = true", async () => {
-    await RestoredCache.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
-    expect(await RestoredCache.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
-
     await expect(
       RestoredCache.purchase(2, 1, {
         from: owner.address,
-        value: ethers.utils.parseEther("0.3"),
+        value: ethers.utils.parseEther("0.1"),
       })
     ).to.be.revertedWith("Sender has problems with BadCache721");
   });
 
   it("Checks the uri of a newly bought RestoredCache as BadCache 721 Holder", async () => {
-    await RestoredCache.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
-    expect(await RestoredCache.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
     await RestoredCache.changeBaseTokenURI("https://facebook.com/");
 
     await BadCache721.connect(wallet).mint(owner.address, 3);
@@ -104,7 +73,7 @@ describe("ReversedCache All in one Test", () => {
     expect(
       await RestoredCache.purchase(3, 1, {
         from: owner.address,
-        value: ethers.utils.parseEther("0.3"),
+        value: ethers.utils.parseEther("0.1"),
       })
     )
       .to.emit(RestoredCache, "MintedRestoredCache")
@@ -115,16 +84,13 @@ describe("ReversedCache All in one Test", () => {
   });
 
   it("It can not purchase a RestoredCache due to not being the owner of a BadCache and pause = true", async () => {
-    await RestoredCache.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
-    expect(await RestoredCache.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
-
     await BadCache721.connect(wallet).mint(wallet.address, 4);
     expect(await BadCache721.ownerOf(4)).to.equals(wallet.address);
 
     await expect(
       RestoredCache.purchase(4, 1, {
         from: owner.address,
-        value: ethers.utils.parseEther("0.3"),
+        value: ethers.utils.parseEther("0.1"),
       })
     ).to.be.revertedWith("Sender has problems with BadCache721");
   });
@@ -141,15 +107,12 @@ describe("ReversedCache All in one Test", () => {
   });
 
   it("It can purchase a RestoreCache even if it is not a holder of BadCache 721 because pause = false", async () => {
-    await RestoredCache.connect(owner).setAmountPerType(1, ethers.utils.parseEther("0.3"));
-    expect(await RestoredCache.getAmountPerType(1)).to.equals(ethers.utils.parseEther("0.3"));
-
     await expect(RestoredCache.connect(owner).setPaused(false)).to.not.be.reverted;
 
     expect(
       await RestoredCache.purchase(5, 1, {
         from: owner.address,
-        value: ethers.utils.parseEther("0.3"),
+        value: ethers.utils.parseEther("0.1"),
       })
     )
       .to.emit(RestoredCache, "MintedRestoredCache")
