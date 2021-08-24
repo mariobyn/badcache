@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../core/BadCacheI.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
-contract RestoredCache is ERC721URIStorage, Ownable {
+contract RestoredCacheRinkeby is ERC721URIStorage, Ownable {
   address private badCache721 = 0x3879cc5C624a7b101b2Bf1b1a2cEea74f6ECa53D;
   bool private paused = true;
   uint256 private balance = 0;

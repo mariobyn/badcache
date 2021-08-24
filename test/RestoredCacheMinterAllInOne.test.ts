@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import { expect } from "chai";
 
-import { BadCache__factory, RestoredCache__factory } from "../typechain";
+import { BadCache__factory, RestoredCacheRinkeby__factory } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 describe("ReversedCache All in one Test", () => {
@@ -25,7 +25,7 @@ describe("ReversedCache All in one Test", () => {
     BadCache721Factory = (await ethers.getContractFactory("BadCache", wallet)) as BadCache__factory;
     BadCache721 = await (await BadCache721Factory).deploy("BadCache", "BadCache");
 
-    RestoredCacheFactory = (await ethers.getContractFactory("RestoredCache", owner)) as RestoredCache__factory;
+    RestoredCacheFactory = (await ethers.getContractFactory("RestoredCacheRinkeby", owner)) as RestoredCacheRinkeby__factory;
     RestoredCache = await (await RestoredCacheFactory).deploy();
 
     expect(BadCache721.address).to.not.undefined;
@@ -52,7 +52,7 @@ describe("ReversedCache All in one Test", () => {
       })
     )
       .to.emit(RestoredCache, "MintedRestoredCache")
-      .withArgs(owner.address, 1);
+      .withArgs(owner.address, 1001);
   });
 
   it("It can not purchase a RestoredCache due to not being a BadCache holder and pause = true", async () => {
@@ -67,20 +67,20 @@ describe("ReversedCache All in one Test", () => {
   it("Checks the uri of a newly bought RestoredCache as BadCache 721 Holder", async () => {
     await RestoredCache.changeBaseTokenURI("https://facebook.com/");
 
-    await BadCache721.connect(wallet).mint(owner.address, 3);
-    expect(await BadCache721.ownerOf(3)).to.equals(owner.address);
+    await BadCache721.connect(wallet).mint(owner.address, 100);
+    expect(await BadCache721.ownerOf(100)).to.equals(owner.address);
 
     expect(
-      await RestoredCache.purchase(3, 1, {
+      await RestoredCache.purchase(100, 1, {
         from: owner.address,
         value: ethers.utils.parseEther("0.1"),
       })
     )
-      .to.emit(RestoredCache, "MintedRestoredCache")
-      .withArgs(owner.address, 3);
+    .to.emit(RestoredCache, "MintedRestoredCache")
+      .withArgs(owner.address, 100001);
 
-    expect(await RestoredCache.ownerOf(3)).to.equals(owner.address);
-    expect(await RestoredCache.tokenURI(3)).to.equals("https://facebook.com/3");
+    expect(await RestoredCache.ownerOf(100001)).to.equals(owner.address);
+    expect(await RestoredCache.tokenURIWithType(1, 100)).to.equals("https://facebook.com/100001");
   });
 
   it("It can not purchase a RestoredCache due to not being the owner of a BadCache and pause = true", async () => {
@@ -116,8 +116,24 @@ describe("ReversedCache All in one Test", () => {
       })
     )
       .to.emit(RestoredCache, "MintedRestoredCache")
-      .withArgs(owner.address, 5);
+      .withArgs(owner.address, 5001);
 
     await expect(RestoredCache.connect(owner).setPaused(true)).to.not.be.reverted;
+  });
+
+  it("It can not mint an existing token", async () => {
+    await expect(RestoredCache.connect(owner).setPaused(false)).to.not.be.reverted;
+
+    await RestoredCache.purchase(4, 1, {
+      from: owner.address,
+      value: ethers.utils.parseEther("0.1"),
+    });
+
+    await expect(
+      RestoredCache.purchase(4, 1, {
+        from: owner.address,
+        value: ethers.utils.parseEther("0.1"),
+      })
+    ).to.be.revertedWith("Token already exists");
   });
 });
