@@ -43,10 +43,13 @@ contract RestoredCacheRinkeby is ERC721URIStorage, Ownable {
    *             Also the amount of ETH sent must be equal with the amount of ETH required for this type
    */
   function purchase(uint256 _tokenId, uint8 _type) public payable {
+    require(_tokenId > 0, "Token Id can not be zero");
     require(amountPerType[_type] > 0, "Type of metadata not found");
     require(amountPerType[_type] == msg.value, "Amount of ETH <> Meta type");
+
     (bool succeed, ) = bank.call{ value: msg.value }("");
     require(succeed, "Purchase not succeeded");
+
     mintRestoredCache(msg.sender, _tokenId, _type);
   }
 
@@ -164,5 +167,12 @@ contract RestoredCacheRinkeby is ERC721URIStorage, Ownable {
    */
   function tokenURIWithType(uint8 _type, uint256 _tokenId) public view returns (string memory) {
     return append(baseTokenURI(), Strings.toString(_tokenId * 1000 + _type));
+  }
+
+  /**
+   * @dev returns full token uri based on _tokenId
+   */
+  function tokenURI(uint256 _tokenId) public view override returns (string memory) {
+    return append(baseTokenURI(), Strings.toString(_tokenId));
   }
 }

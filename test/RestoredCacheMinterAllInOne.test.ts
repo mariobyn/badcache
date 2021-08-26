@@ -81,6 +81,7 @@ describe("ReversedCache All in one Test", () => {
 
     expect(await RestoredCache.ownerOf(100001)).to.equals(owner.address);
     expect(await RestoredCache.tokenURIWithType(1, 100)).to.equals("https://facebook.com/100001");
+    expect(await RestoredCache.tokenURI(100001)).to.equals("https://facebook.com/100001");
   });
 
   it("It can not purchase a RestoredCache due to not being the owner of a BadCache and pause = true", async () => {
