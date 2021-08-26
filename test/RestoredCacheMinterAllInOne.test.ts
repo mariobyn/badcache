@@ -76,12 +76,12 @@ describe("ReversedCache All in one Test", () => {
         value: ethers.utils.parseEther("0.1"),
       })
     )
-    .to.emit(RestoredCache, "MintedRestoredCache")
+      .to.emit(RestoredCache, "MintedRestoredCache")
       .withArgs(owner.address, 100001);
 
     expect(await RestoredCache.ownerOf(100001)).to.equals(owner.address);
-    expect(await RestoredCache.tokenURIWithType(1, 100)).to.equals("https://facebook.com/100001");
-    expect(await RestoredCache.tokenURI(100001)).to.equals("https://facebook.com/100001");
+    expect(await RestoredCache.tokenURIWithType(1, 100)).to.equals("https://facebook.com/100001.json");
+    expect(await RestoredCache.tokenURI(100001)).to.equals("https://facebook.com/100001.json");
   });
 
   it("It can not purchase a RestoredCache due to not being the owner of a BadCache and pause = true", async () => {
@@ -122,7 +122,20 @@ describe("ReversedCache All in one Test", () => {
     await expect(RestoredCache.connect(owner).setPaused(true)).to.not.be.reverted;
   });
 
-  it("It can not mint an existing token", async () => {
+  it("It can not purchase a RestoreCache with another type because there is a token with this id and different type, also pause = false", async () => {
+    await expect(RestoredCache.connect(owner).setPaused(false)).to.not.be.reverted;
+
+    await expect(
+      RestoredCache.purchase(5, 2, {
+        from: owner.address,
+        value: ethers.utils.parseEther("0.1"),
+      })
+    ).to.be.revertedWith("Token minted already");
+
+    await expect(RestoredCache.connect(owner).setPaused(true)).to.not.be.reverted;
+  });
+
+  it("It can not mint an existing token with the same type", async () => {
     await expect(RestoredCache.connect(owner).setPaused(false)).to.not.be.reverted;
 
     await RestoredCache.purchase(4, 1, {
@@ -135,6 +148,6 @@ describe("ReversedCache All in one Test", () => {
         from: owner.address,
         value: ethers.utils.parseEther("0.1"),
       })
-    ).to.be.revertedWith("Token already exists");
+    ).to.be.revertedWith("Token minted already");
   });
 });

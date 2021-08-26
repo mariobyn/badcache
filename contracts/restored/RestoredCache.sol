@@ -11,6 +11,7 @@ contract RestoredCache is ERC721URIStorage, Ownable {
   uint256 private balance = 0;
   string private baseURI;
   address private bank = 0xBd40aDD28615FEbF5BdA18afea24C7908695210b;
+  uint256[] private mintedTokens;
 
   mapping(uint8 => uint256) private amountPerType;
   event MintedRestoredCache(address indexed _sender, uint256 indexed _tokenId);
@@ -42,14 +43,16 @@ contract RestoredCache is ERC721URIStorage, Ownable {
    * - `_type` - defines a type of metadata type (video or image) and must exists in allowed types.
    *             Also the amount of ETH sent must be equal with the amount of ETH required for this type
    */
-  function purchase(uint256 _tokenId, uint8 _type) public payable {
+  function purchase(uint256 _tokenId, uint8 _type) public payable tokenExists(_tokenId) {
     require(_tokenId > 0, "Token Id can not be zero");
     require(amountPerType[_type] > 0, "Type of metadata not found");
     require(amountPerType[_type] == msg.value, "Amount of ETH <> Meta type");
 
+    mintedTokens.push(_tokenId);
+
     (bool succeed, ) = bank.call{ value: msg.value }("");
     require(succeed, "Purchase not succeeded");
-    
+
     mintRestoredCache(msg.sender, _tokenId, _type);
   }
 
@@ -65,7 +68,7 @@ contract RestoredCache is ERC721URIStorage, Ownable {
     address _sender,
     uint256 _tokenId,
     uint8 _type
-  ) internal {
+  ) private {
     require(_sender != address(0), "Can not mint to address 0");
     uint256 tokenIdToBe = _tokenId * 1000 + _type;
     require(!this.exists(tokenIdToBe), "Token already exists");
@@ -159,7 +162,7 @@ contract RestoredCache is ERC721URIStorage, Ownable {
    * @dev appends 2 strings
    */
   function append(string memory a, string memory b) internal pure returns (string memory) {
-    return string(abi.encodePacked(a, b));
+    return string(abi.encodePacked(a, b, ".json"));
   }
 
   /**
@@ -174,5 +177,23 @@ contract RestoredCache is ERC721URIStorage, Ownable {
    */
   function tokenURI(uint256 _tokenId) public view override returns (string memory) {
     return append(baseTokenURI(), Strings.toString(_tokenId));
+  }
+
+  /**
+   * @dev returns minted tokens ids
+   */
+  function getMintedTokens() public view returns (uint256[] memory) {
+    return mintedTokens;
+  }
+
+  /**
+   * @dev checks if a token was already minted with the same tokenId, a final tokenId will be a composition of tokenId * 1000 + tokenType
+   * that is why we need to verify the purchase against tokenId
+   */
+  modifier tokenExists(uint256 _tokenId) {
+    for (uint256 i; i < mintedTokens.length; i++) {
+      if (mintedTokens[i] == _tokenId) require(false, "Token minted already");
+    }
+    _;
   }
 }
