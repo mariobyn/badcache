@@ -460,12 +460,7 @@ xdescribe("BadCache Bridge Test", () => {
   });
 
   it("It can not addAllowedTokens by not the birdge owner", async () => {
-    await expect(
-      Bridge.connect(walletTest3).addAllowedToken(
-        100000,
-        100
-      )
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(Bridge.connect(walletTest3).addAllowedToken(100000, 100)).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
   //hardhat issue, this test needs to be solved
